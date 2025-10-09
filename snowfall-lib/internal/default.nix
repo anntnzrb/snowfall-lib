@@ -12,6 +12,8 @@ let
     isFunction
     ;
 
+  inherit (core-inputs.flake-utils-plus.lib) filterPackages;
+
   core-inputs-libs = snowfall-lib.flake.get-libs (snowfall-lib.flake.without-self core-inputs);
   user-inputs-libs = snowfall-lib.flake.get-libs (snowfall-lib.flake.without-self user-inputs);
 
@@ -63,5 +65,37 @@ in
 {
   internal = {
     inherit system-lib user-lib;
+
+    create-simple-derivations = {
+      type,
+      channels,
+      src ? snowfall-lib.fs.get-snowfall-file type,
+      pkgs ? channels.nixpkgs,
+      overrides ? {},
+      alias ? {},
+    }:
+    let
+      user-items = snowfall-lib.fs.get-default-nix-files-recursive src;
+      
+      create-metadata = item: {
+        name = snowfall-lib.path.get-output-name item;
+        drv = callPackageWith (
+          pkgs // {
+            inherit channels;
+            lib = system-lib;
+            inputs = snowfall-lib.flake.without-src user-inputs;
+            namespace = snowfall-config.namespace;
+          }
+        ) item {};
+      };
+      
+      items-metadata = builtins.map create-metadata user-items;
+      
+      merge-items = items: metadata:
+        items // { ${metadata.name} = metadata.drv; };
+      
+      items = snowfall-lib.attrs.merge-with-aliases merge-items items-metadata alias // overrides;
+    in
+      filterPackages pkgs.stdenv.hostPlatform.system items;
   };
 }
