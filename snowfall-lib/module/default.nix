@@ -63,7 +63,6 @@ in {
                 systems = args.systems or {};
 
                 lib = snowfall-lib.internal.system-lib;
-                pkgs = user-inputs.self.pkgs.${system}.nixpkgs;
 
                 inputs = snowfall-lib.flake.without-src user-inputs;
                 namespace = snowfall-config.namespace;
