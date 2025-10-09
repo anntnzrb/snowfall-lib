@@ -59,10 +59,10 @@
     };
 
     formatter = {
-      x86_64-linux = inputs.nixpkgs.legacyPackages.x86_64-linux.alejandra;
-      aarch64-linux = inputs.nixpkgs.legacyPackages.aarch64-linux.alejandra;
-      x86_64-darwin = inputs.nixpkgs.legacyPackages.x86_64-darwin.alejandra;
-      aarch64-darwin = inputs.nixpkgs.legacyPackages.aarch64-darwin.alejandra;
+      x86_64-linux = inputs.nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
+      aarch64-linux = inputs.nixpkgs.legacyPackages.aarch64-linux.nixfmt-tree;
+      x86_64-darwin = inputs.nixpkgs.legacyPackages.x86_64-darwin.nixfmt-tree;
+      aarch64-darwin = inputs.nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
     };
 
     snowfall = rec {
