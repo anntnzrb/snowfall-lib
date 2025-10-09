@@ -56,7 +56,8 @@ in
         unused-overrides = builtins.removeAttrs overrides (
           builtins.map (metadata: metadata.name) templates-metadata
         );
-        templates = snowfall-lib.attrs.merge-with-aliases merge-templates templates-metadata alias // unused-overrides;
+        templates =
+          snowfall-lib.attrs.merge-with-aliases merge-templates templates-metadata alias // unused-overrides;
       in
       templates;
   };

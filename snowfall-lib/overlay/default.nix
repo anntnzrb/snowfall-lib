@@ -5,7 +5,13 @@
   snowfall-config,
 }:
 let
-  inherit (core-inputs.nixpkgs.lib) assertMsg foldl concatStringsSep pipe flatten;
+  inherit (core-inputs.nixpkgs.lib)
+    assertMsg
+    foldl
+    concatStringsSep
+    pipe
+    flatten
+    ;
 
   user-overlays-root = snowfall-lib.fs.get-snowfall-file "overlays";
   user-packages-root = snowfall-lib.fs.get-snowfall-file "packages";
@@ -191,12 +197,14 @@ in
 
         default-overlay =
           final: prev:
-          pipe [ package-overlays overlays ] [
-            (builtins.map builtins.attrValues)
-            flatten
-            (builtins.map (overlay: overlay final prev))
-            snowfall-lib.attrs.merge-shallow-packages
-          ];
+          pipe
+            [ package-overlays overlays ]
+            [
+              (builtins.map builtins.attrValues)
+              flatten
+              (builtins.map (overlay: overlay final prev))
+              snowfall-lib.attrs.merge-shallow-packages
+            ];
       in
       package-overlays // overlays // { default = default-overlay; } // extra-overlays;
   };

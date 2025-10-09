@@ -50,15 +50,13 @@ let
   #   result: { x = nixpkgs.lib; }
   get-libs =
     attrs:
-    fold
-      (name: acc:
-        let value = attrs.${name}; in
-        if builtins.isAttrs (value.lib or null)
-        then acc // { ${name} = value.lib; }
-        else acc
-      )
-      { }
-      (builtins.attrNames attrs);
+    fold (
+      name: acc:
+      let
+        value = attrs.${name};
+      in
+      if builtins.isAttrs (value.lib or null) then acc // { ${name} = value.lib; } else acc
+    ) { } (builtins.attrNames attrs);
 
   # Remove the `self` attribute from an attribute set.
   # Type: Attrs -> Attrs

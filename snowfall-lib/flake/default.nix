@@ -20,91 +20,93 @@ let
     ;
 in
 let
-  flake = let
-    ## Remove the `self` attribute from an attribute set.
-    ## Example Usage:
-    ## ```nix
-    ## without-self { self = {}; x = true; }
-    ## ```
-    ## Result:
-    ## ```nix
-    ## { x = true; }
-    ## ```
-    #@ Attrs -> Attrs
-    without-self = flake-inputs: builtins.removeAttrs flake-inputs [ "self" ];
+  flake =
+    let
+      ## Remove the `self` attribute from an attribute set.
+      ## Example Usage:
+      ## ```nix
+      ## without-self { self = {}; x = true; }
+      ## ```
+      ## Result:
+      ## ```nix
+      ## { x = true; }
+      ## ```
+      #@ Attrs -> Attrs
+      without-self = flake-inputs: builtins.removeAttrs flake-inputs [ "self" ];
 
-    ## Remove the `src` attribute from an attribute set.
-    ## Example Usage:
-    ## ```nix
-    ## without-src { src = ./.; x = true; }
-    ## ```
-    ## Result:
-    ## ```nix
-    ## { x = true; }
-    ## ```
-    #@ Attrs -> Attrs
-    without-src = flake-inputs: builtins.removeAttrs flake-inputs [ "src" ];
-  in {
-    inherit without-self without-src;
+      ## Remove the `src` attribute from an attribute set.
+      ## Example Usage:
+      ## ```nix
+      ## without-src { src = ./.; x = true; }
+      ## ```
+      ## Result:
+      ## ```nix
+      ## { x = true; }
+      ## ```
+      #@ Attrs -> Attrs
+      without-src = flake-inputs: builtins.removeAttrs flake-inputs [ "src" ];
+    in
+    {
+      inherit without-self without-src;
 
-    ## Remove the `src` and `self` attributes from an attribute set.
-    ## Example Usage:
-    ## ```nix
-    ## without-snowfall-inputs { self = {}; src = ./.; x = true; }
-    ## ```
-    ## Result:
-    ## ```nix
-    ## { x = true; }
-    ## ```
-    #@ Attrs -> Attrs
-    without-snowfall-inputs = snowfall-lib.fp.compose without-self without-src;
+      ## Remove the `src` and `self` attributes from an attribute set.
+      ## Example Usage:
+      ## ```nix
+      ## without-snowfall-inputs { self = {}; src = ./.; x = true; }
+      ## ```
+      ## Result:
+      ## ```nix
+      ## { x = true; }
+      ## ```
+      #@ Attrs -> Attrs
+      without-snowfall-inputs = snowfall-lib.fp.compose without-self without-src;
 
-    ## Remove Snowfall-specific attributes so the rest can be safely passed to flake-utils-plus.
-    ## Example Usage:
-    ## ```nix
-    ## without-snowfall-options { src = ./.; x = true; }
-    ## ```
-    ## Result:
-    ## ```nix
-    ## { x = true; }
-    ## ```
-    #@ Attrs -> Attrs
-    without-snowfall-options =
-      flake-options:
-      builtins.removeAttrs flake-options [
-        "systems"
-        "modules"
-        "overlays"
-        "packages"
-        "outputs-builder"
-        "outputsBuilder"
-        "packagesPrefix"
-        "hosts"
-        "homes"
-        "channels-config"
-        "templates"
-        "checks"
-        "alias"
-        "snowfall"
-      ];
+      ## Remove Snowfall-specific attributes so the rest can be safely passed to flake-utils-plus.
+      ## Example Usage:
+      ## ```nix
+      ## without-snowfall-options { src = ./.; x = true; }
+      ## ```
+      ## Result:
+      ## ```nix
+      ## { x = true; }
+      ## ```
+      #@ Attrs -> Attrs
+      without-snowfall-options =
+        flake-options:
+        builtins.removeAttrs flake-options [
+          "systems"
+          "modules"
+          "overlays"
+          "packages"
+          "outputs-builder"
+          "outputsBuilder"
+          "packagesPrefix"
+          "hosts"
+          "homes"
+          "channels-config"
+          "templates"
+          "checks"
+          "alias"
+          "snowfall"
+        ];
 
-    ## Transform an attribute set of inputs into an attribute set where the values are the inputs' `lib` attribute. Entries without a `lib` attribute are removed.
-    ## Example Usage:
-    ## ```nix
-    ## get-lib { x = nixpkgs; y = {}; }
-    ## ```
-    ## Result:
-    ## ```nix
-    ## { x = nixpkgs.lib; }
-    ## ```
-    #@ Attrs -> Attrs
-    get-libs =
-      attrs:
-      pipe attrs [
-        (filterAttrs (name: value: builtins.isAttrs (value.lib or null)))
-        (mapAttrs (name: value: value.lib))
-      ];
-  };
+      ## Transform an attribute set of inputs into an attribute set where the values are the inputs' `lib` attribute. Entries without a `lib` attribute are removed.
+      ## Example Usage:
+      ## ```nix
+      ## get-lib { x = nixpkgs; y = {}; }
+      ## ```
+      ## Result:
+      ## ```nix
+      ## { x = nixpkgs.lib; }
+      ## ```
+      #@ Attrs -> Attrs
+      get-libs =
+        attrs:
+        pipe attrs [
+          (filterAttrs (name: value: builtins.isAttrs (value.lib or null)))
+          (mapAttrs (name: value: value.lib))
+        ];
+    };
 
   mkFlake =
     full-flake-options:
@@ -227,9 +229,7 @@ let
                 (mapAttrs (home-name: _: flake-outputs.homeConfigurations.${home-name}))
                 (mapAttrs' (
                   name: value:
-                  nameValuePair
-                    (if hasSuffix "@${system}" name then removeSuffix "@${system}" name else name)
-                    value
+                  nameValuePair (if hasSuffix "@${system}" name then removeSuffix "@${system}" name else name) value
                 ))
               ];
             };

@@ -16,7 +16,7 @@
     ## { another-shell = ...; my-shell = ...; default = ...; }
     ## ```
     #@ Attrs -> Attrs
-    create-shells = args:
-      snowfall-lib.internal.create-simple-derivations (args // { type = "shells"; });
+    create-shells =
+      args: snowfall-lib.internal.create-simple-derivations (args // { type = "shells"; });
   };
 }

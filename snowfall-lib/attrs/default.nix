@@ -90,7 +90,8 @@ in
     ## ```
     ## Result: Merged items with aliases applied
     #@ (Attrs -> Attrs -> Attrs) -> [Attrs] -> Attrs -> Attrs
-    merge-with-aliases = merge-fn: items: alias:
+    merge-with-aliases =
+      merge-fn: items: alias:
       let
         merged = foldl merge-fn { } items;
       in

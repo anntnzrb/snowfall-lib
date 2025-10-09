@@ -16,7 +16,7 @@
     ## { another-check = ...; my-check = ...; default = ...; }
     ## ```
     #@ Attrs -> Attrs
-    create-checks = args:
-      snowfall-lib.internal.create-simple-derivations (args // { type = "checks"; });
+    create-checks =
+      args: snowfall-lib.internal.create-simple-derivations (args // { type = "checks"; });
   };
 }

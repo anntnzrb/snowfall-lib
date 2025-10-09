@@ -11,7 +11,12 @@ let
     dirOf
     concatStringsSep
     ;
-  inherit (core-inputs.nixpkgs.lib) assertMsg last init hasPrefix;
+  inherit (core-inputs.nixpkgs.lib)
+    assertMsg
+    last
+    init
+    hasPrefix
+    ;
 
   file-name-regex = "(.*)\\.(.*)$";
 in
@@ -131,9 +136,7 @@ in
     ## "bar"
     ## ```
     #@ Path -> String
-    get-output-name = snowfall-lib.fp.compose
-      builtins.unsafeDiscardStringContext
-      get-parent-directory;
+    get-output-name = snowfall-lib.fp.compose builtins.unsafeDiscardStringContext get-parent-directory;
 
     ## Get the directory name for flake outputs.
     ## Example Usage:
@@ -145,9 +148,7 @@ in
     ## "foo"
     ## ```
     #@ Path -> String
-    get-directory-name = snowfall-lib.fp.compose
-      builtins.unsafeDiscardStringContext
-      baseNameOf;
+    get-directory-name = snowfall-lib.fp.compose builtins.unsafeDiscardStringContext baseNameOf;
 
     ## Get relative module path from source directory.
     ## Example Usage:

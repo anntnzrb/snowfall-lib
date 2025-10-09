@@ -122,8 +122,7 @@ in
     ## ```
     #@ Path -> [Path]
     get-directories-with-default =
-      path:
-      builtins.filter (dir: pathExists "${dir}/default.nix") (get-directories path);
+      path: builtins.filter (dir: pathExists "${dir}/default.nix") (get-directories path);
 
     ## Get files at a given path.
     ## Example Usage:
@@ -234,7 +233,9 @@ in
     ## [ "./something/some-directory/default.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-default-nix-files-recursive = filter-files-recursive (f: builtins.baseNameOf f == "default.nix");
+    get-default-nix-files-recursive = filter-files-recursive (
+      f: builtins.baseNameOf f == "default.nix"
+    );
 
     ## Get nix files at a given path not named "default.nix".
     ## Example Usage:
@@ -246,8 +247,9 @@ in
     ## [ "./something/a.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-non-default-nix-files = filter-files (f:
-      snowfall-lib.path.has-file-extension "nix" f && builtins.baseNameOf f != "default.nix");
+    get-non-default-nix-files = filter-files (
+      f: snowfall-lib.path.has-file-extension "nix" f && builtins.baseNameOf f != "default.nix"
+    );
 
     ## Get nix files at a given path not named "default.nix", traversing any directories within.
     ## Example Usage:
@@ -259,7 +261,8 @@ in
     ## [ "./something/some-directory/a.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-non-default-nix-files-recursive = filter-files-recursive (f:
-      snowfall-lib.path.has-file-extension "nix" f && builtins.baseNameOf f != "default.nix");
+    get-non-default-nix-files-recursive = filter-files-recursive (
+      f: snowfall-lib.path.has-file-extension "nix" f && builtins.baseNameOf f != "default.nix"
+    );
   };
 }
