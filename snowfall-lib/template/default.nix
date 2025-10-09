@@ -53,12 +53,10 @@ in
             ${metadata.name} =
               (overrides.${metadata.name} or { }) // (builtins.removeAttrs metadata [ "name" ]);
           };
-        templates-without-aliases = foldl merge-templates { } templates-metadata;
-        aliased-templates = mapAttrs (name: value: templates-without-aliases.${value}) alias;
         unused-overrides = builtins.removeAttrs overrides (
           builtins.map (metadata: metadata.name) templates-metadata
         );
-        templates = templates-without-aliases // aliased-templates // unused-overrides;
+        templates = snowfall-lib.attrs.merge-with-aliases merge-templates templates-metadata alias // unused-overrides;
       in
       templates;
   };

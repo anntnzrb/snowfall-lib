@@ -77,9 +77,7 @@ in
           // {
             ${metadata.name} = metadata.drv;
           };
-        packages-without-aliases = foldl merge-packages { } packages-metadata;
-        aliased-packages = mapAttrs (name: value: packages-without-aliases.${value}) alias;
-        packages = packages-without-aliases // aliased-packages // overrides;
+        packages = snowfall-lib.attrs.merge-with-aliases merge-packages packages-metadata alias // overrides;
       in
       filterPackages pkgs.stdenv.hostPlatform.system packages;
   };

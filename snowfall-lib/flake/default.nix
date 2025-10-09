@@ -97,12 +97,15 @@ rec {
     #@ Attrs -> Attrs
     get-libs =
       attrs:
-      let
-        # @PERF(jakehamilton): Replace filter+map with a fold.
-        attrs-with-libs = filterAttrs (name: value: builtins.isAttrs (value.lib or null)) attrs;
-        libs = builtins.mapAttrs (name: input: input.lib) attrs-with-libs;
-      in
-      libs;
+      foldl
+        (acc: name:
+          let value = attrs.${name}; in
+          if builtins.isAttrs (value.lib or null)
+          then acc // { ${name} = value.lib; }
+          else acc
+        )
+        { }
+        (builtins.attrNames attrs);
   };
 
   mkFlake =

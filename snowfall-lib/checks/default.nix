@@ -58,9 +58,7 @@ in
           // {
             ${metadata.name} = metadata.drv;
           };
-        checks-without-aliases = foldl merge-checks { } checks-metadata;
-        aliased-checks = mapAttrs (name: value: checks-without-aliases.${value}) alias;
-        checks = checks-without-aliases // aliased-checks // overrides;
+        checks = snowfall-lib.attrs.merge-with-aliases merge-checks checks-metadata alias // overrides;
       in
       filterPackages pkgs.stdenv.hostPlatform.system checks;
   };

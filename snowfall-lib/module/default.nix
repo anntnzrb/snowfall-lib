@@ -95,9 +95,7 @@ in
               in
               user-module // { _file = metadata.path; };
           };
-        modules-without-aliases = foldl merge-modules { } modules-metadata;
-        aliased-modules = mapAttrs (name: value: modules-without-aliases.${value}) alias;
-        modules = modules-without-aliases // aliased-modules // overrides;
+        modules = snowfall-lib.attrs.merge-with-aliases merge-modules modules-metadata alias // overrides;
       in
       modules;
   };

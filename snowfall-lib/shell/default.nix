@@ -58,9 +58,7 @@ in
           // {
             ${metadata.name} = metadata.drv;
           };
-        shells-without-aliases = foldl merge-shells { } shells-metadata;
-        aliased-shells = mapAttrs (name: value: shells-without-aliases.${value}) alias;
-        shells = shells-without-aliases // aliased-shells // overrides;
+        shells = snowfall-lib.attrs.merge-with-aliases merge-shells shells-metadata alias // overrides;
       in
       filterPackages pkgs.stdenv.hostPlatform.system shells;
   };
