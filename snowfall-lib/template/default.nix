@@ -41,7 +41,7 @@ in
             description = flake-attrs.description or null;
           in
           {
-            name = builtins.unsafeDiscardStringContext (baseNameOf template);
+            name = snowfall-lib.path.get-directory-name template;
             path = template;
           }
           // (if description != null then { inherit description; } else { });

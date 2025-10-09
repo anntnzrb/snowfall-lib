@@ -133,5 +133,18 @@ in
     #@ Path -> String
     get-output-name = path: 
       builtins.unsafeDiscardStringContext (get-parent-directory path);
+
+    ## Get the directory name for flake outputs.
+    ## Example Usage:
+    ## ```nix
+    ## get-directory-name /templates/foo
+    ## ```
+    ## Result:
+    ## ```nix
+    ## "foo"
+    ## ```
+    #@ Path -> String
+    get-directory-name = path: 
+      builtins.unsafeDiscardStringContext (baseNameOf path);
   };
 }
