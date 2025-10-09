@@ -1,11 +1,17 @@
-inputs @ {
+inputs@{
   pkgs,
   lib,
   options,
   config,
   ...
-}: let
-  inherit (lib) types mkOption mkIf mkDefault;
+}:
+let
+  inherit (lib)
+    types
+    mkOption
+    mkIf
+    mkDefault
+    ;
 
   cfg = config.snowfallorg;
 
@@ -16,12 +22,14 @@ inputs @ {
   has-user-name = (cfg.user.name or null) != null;
 
   default-home-directory =
-    if (os-user-home != null)
-    then os-user-home
-    else if pkgs.stdenv.isDarwin
-    then "/Users/${cfg.user.name}"
-    else "/home/${cfg.user.name}";
-in {
+    if (os-user-home != null) then
+      os-user-home
+    else if pkgs.stdenv.isDarwin then
+      "/Users/${cfg.user.name}"
+    else
+      "/home/${cfg.user.name}";
+in
+{
   options.snowfallorg = {
     user = {
       enable = mkOption {

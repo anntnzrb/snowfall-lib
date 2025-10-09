@@ -3,10 +3,12 @@
   user-inputs,
   snowfall-lib,
   snowfall-config,
-}: let
+}:
+let
   inherit (builtins) baseNameOf dirOf;
   inherit (core-inputs.nixpkgs.lib) id foldr flip;
-in {
+in
+{
   fp = rec {
     ## Compose two functions.
     ## Example Usage:
@@ -18,7 +20,9 @@ in {
     ## (x: add-two (add-one x))
     ## ```
     #@ (b -> c) -> (a -> b) -> a -> c
-    compose = f: g: x: f (g x);
+    compose =
+      f: g: x:
+      f (g x);
 
     ## Compose many functions.
     ## Example Usage:

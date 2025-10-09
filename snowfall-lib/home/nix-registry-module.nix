@@ -6,7 +6,8 @@
   user-inputs,
   core-inputs,
   ...
-}: {
+}:
+{
   disabledModules = [
     # The module from flake-utils-plus only works on NixOS and nix-darwin. For home-manager
     # to build, this module needs to be disabled.
