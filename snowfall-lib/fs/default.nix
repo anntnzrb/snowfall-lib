@@ -12,6 +12,7 @@ let
     filterAttrs
     mapAttrsToList
     flatten
+    pipe
     ;
 
   file-name-regex = "(.*)\\.(.*)$";
@@ -81,6 +82,23 @@ in
     #@ Path -> Attrs
     safe-read-directory = path: if pathExists path then readDir path else { };
 
+    ## Get entries at a given path filtered by kind predicate.
+    ## Example Usage:
+    ## ```nix
+    ## get-entries-by-kind is-directory-kind ./something
+    ## ```
+    ## Result:
+    ## ```nix
+    ## [ "./something/a-directory" ]
+    ## ```
+    #@ (String -> Bool) -> Path -> [Path]
+    get-entries-by-kind =
+      kind-predicate: path:
+      pipe (safe-read-directory path) [
+        (filterAttrs (name: kind: kind-predicate kind))
+        (mapAttrsToList (name: _: "${path}/${name}"))
+      ];
+
     ## Get directories at a given path.
     ## Example Usage:
     ## ```nix
@@ -91,13 +109,7 @@ in
     ## [ "./something/a-directory" ]
     ## ```
     #@ Path -> [Path]
-    get-directories =
-      path:
-      let
-        entries = safe-read-directory path;
-        filtered-entries = filterAttrs (name: kind: is-directory-kind kind) entries;
-      in
-      mapAttrsToList (name: kind: "${path}/${name}") filtered-entries;
+    get-directories = get-entries-by-kind is-directory-kind;
 
     ## Get directories containing default.nix at a given path.
     ## Example Usage:
@@ -123,13 +135,7 @@ in
     ## [ "./something/a-file" ]
     ## ```
     #@ Path -> [Path]
-    get-files =
-      path:
-      let
-        entries = safe-read-directory path;
-        filtered-entries = filterAttrs (name: kind: is-file-kind kind) entries;
-      in
-      mapAttrsToList (name: kind: "${path}/${name}") filtered-entries;
+    get-files = get-entries-by-kind is-file-kind;
 
     ## Get files at a given path, traversing any directories within.
     ## Example Usage:
@@ -158,6 +164,30 @@ in
       in
       files;
 
+    ## Filter files at a given path by a predicate.
+    ## Example Usage:
+    ## ```nix
+    ## filter-files (f: baseNameOf f == "foo.nix") ./something
+    ## ```
+    ## Result:
+    ## ```nix
+    ## [ "./something/foo.nix" ]
+    ## ```
+    #@ (Path -> Bool) -> Path -> [Path]
+    filter-files = predicate: path: builtins.filter predicate (get-files path);
+
+    ## Filter files recursively at a given path by a predicate.
+    ## Example Usage:
+    ## ```nix
+    ## filter-files-recursive (f: baseNameOf f == "foo.nix") ./something
+    ## ```
+    ## Result:
+    ## ```nix
+    ## [ "./something/sub/foo.nix" ]
+    ## ```
+    #@ (Path -> Bool) -> Path -> [Path]
+    filter-files-recursive = predicate: path: builtins.filter predicate (get-files-recursive path);
+
     ## Get nix files at a given path.
     ## Example Usage:
     ## ```nix
@@ -168,7 +198,7 @@ in
     ## [ "./something/a.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-nix-files = path: builtins.filter (snowfall-lib.path.has-file-extension "nix") (get-files path);
+    get-nix-files = filter-files (snowfall-lib.path.has-file-extension "nix");
 
     ## Get nix files at a given path, traversing any directories within.
     ## Example Usage:
@@ -180,8 +210,7 @@ in
     ## [ "./something/a.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-nix-files-recursive =
-      path: builtins.filter (snowfall-lib.path.has-file-extension "nix") (get-files-recursive path);
+    get-nix-files-recursive = filter-files-recursive (snowfall-lib.path.has-file-extension "nix");
 
     ## Get nix files at a given path named "default.nix".
     ## Example Usage:
@@ -193,8 +222,7 @@ in
     ## [ "./something/default.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-default-nix-files =
-      path: builtins.filter (name: builtins.baseNameOf name == "default.nix") (get-files path);
+    get-default-nix-files = filter-files (f: builtins.baseNameOf f == "default.nix");
 
     ## Get nix files at a given path named "default.nix", traversing any directories within.
     ## Example Usage:
@@ -206,8 +234,7 @@ in
     ## [ "./something/some-directory/default.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-default-nix-files-recursive =
-      path: builtins.filter (name: builtins.baseNameOf name == "default.nix") (get-files-recursive path);
+    get-default-nix-files-recursive = filter-files-recursive (f: builtins.baseNameOf f == "default.nix");
 
     ## Get nix files at a given path not named "default.nix".
     ## Example Usage:
@@ -219,12 +246,8 @@ in
     ## [ "./something/a.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-non-default-nix-files =
-      path:
-      builtins.filter (
-        name:
-        (snowfall-lib.path.has-file-extension "nix" name) && (builtins.baseNameOf name != "default.nix")
-      ) (get-files path);
+    get-non-default-nix-files = filter-files (f:
+      snowfall-lib.path.has-file-extension "nix" f && builtins.baseNameOf f != "default.nix");
 
     ## Get nix files at a given path not named "default.nix", traversing any directories within.
     ## Example Usage:
@@ -236,11 +259,7 @@ in
     ## [ "./something/some-directory/a.nix" ]
     ## ```
     #@ Path -> [Path]
-    get-non-default-nix-files-recursive =
-      path:
-      builtins.filter (
-        name:
-        (snowfall-lib.path.has-file-extension "nix" name) && (builtins.baseNameOf name != "default.nix")
-      ) (get-files-recursive path);
+    get-non-default-nix-files-recursive = filter-files-recursive (f:
+      snowfall-lib.path.has-file-extension "nix" f && builtins.baseNameOf f != "default.nix");
   };
 }
