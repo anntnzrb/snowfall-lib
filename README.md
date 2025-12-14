@@ -5,6 +5,7 @@
   <a href="https://nixos.org" target="_blank"><img alt="Linux Ready" src="https://img.shields.io/static/v1?logo=linux&logoColor=d8dee9&label=Linux&labelColor=5e81ac&message=Ready&color=d8dee9&style=for-the-badge"></a>
   <a href="https://github.com/lnl7/nix-darwin" target="_blank"><img alt="macOS Ready" src="https://img.shields.io/static/v1?logo=apple&logoColor=d8dee9&label=macOS&labelColor=5e81ac&message=Ready&color=d8dee9&style=for-the-badge"></a>
   <a href="https://github.com/nix-community/nixos-generators" target="_blank"><img alt="Generators Ready" src="https://img.shields.io/static/v1?logo=linux-containers&logoColor=d8dee9&label=Generators&labelColor=5e81ac&message=Ready&color=d8dee9&style=for-the-badge"></a>
+  <a href="https://deepwiki.com/anntnzrb/snowfall-lib" target="_blank"><img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg"></a>
 </p>
 
 &nbsp;
