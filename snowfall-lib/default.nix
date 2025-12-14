@@ -24,7 +24,7 @@ let
     fix
     filterAttrs
     mergeAttrs
-    fold
+    foldr
     recursiveUpdate
     callPackageWith
     isFunction
@@ -34,13 +34,13 @@ let
   # Type: [Attrs] -> Attrs
   # Usage: merge-deep [{ x = 1; } { x = 2; }]
   #   result: { x = 2; }
-  merge-deep = fold recursiveUpdate { };
+  merge-deep = foldr recursiveUpdate { };
 
   # Merge the root of a list of attribute sets.
   # Type: [Attrs] -> Attrs
   # Usage: merge-shallow [{ x = 1; } { x = 2; }]
   #   result: { x = 2; }
-  merge-shallow = fold mergeAttrs { };
+  merge-shallow = foldr mergeAttrs { };
 
   # Transform an attribute set of inputs into an attribute set where
   # the values are the inputs' `lib` attribute. Entries without a `lib`
@@ -50,7 +50,7 @@ let
   #   result: { x = nixpkgs.lib; }
   get-libs =
     attrs:
-    fold (
+    foldr (
       name: acc:
       let
         value = attrs.${name};
