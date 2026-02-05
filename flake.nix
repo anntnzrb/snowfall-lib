@@ -4,6 +4,10 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils-plus.url = "github:gytis-ivaskevicius/flake-utils-plus/master";
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -15,6 +19,28 @@
       core-inputs = inputs // {
         src = self;
       };
+      systems = inputs.nixpkgs.lib.systems.flakeExposed;
+      inherit (inputs.flake-utils-plus.lib) eachSystemMap;
+      treefmtEval = eachSystemMap systems (
+        system:
+        inputs.treefmt-nix.lib.evalModule inputs.nixpkgs.legacyPackages.${system} {
+          projectRootFile = "flake.nix";
+
+          programs = {
+            deadnix = {
+              enable = true;
+              no-lambda-arg = false;
+              no-lambda-pattern-names = false;
+              no-underscore = false;
+            };
+            nixfmt.enable = true;
+            statix = {
+              enable = true;
+              disabled-lints = [ ];
+            };
+          };
+        }
+      );
 
       # Create the library, extending the nixpkgs library and merging
       # libraries from other inputs to make them available like
@@ -59,12 +85,7 @@
         user = ./modules/home/user/default.nix;
       };
 
-      formatter = {
-        x86_64-linux = inputs.nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
-        aarch64-linux = inputs.nixpkgs.legacyPackages.aarch64-linux.nixfmt-tree;
-        x86_64-darwin = inputs.nixpkgs.legacyPackages.x86_64-darwin.nixfmt-tree;
-        aarch64-darwin = inputs.nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
-      };
+      formatter = eachSystemMap systems (system: treefmtEval.${system}.config.build.wrapper);
 
       snowfall = rec {
         raw-config = config;
