@@ -164,7 +164,21 @@ in
           virtual-system-builder =
             args:
             let
-              system-config = nixos-system-builder virtual-system-type args;
+              extra-modules =
+                if virtual-system-type == "vm-nogui" then
+                  [
+                    {
+                      virtualisation.graphics = false;
+                    }
+                  ]
+                else
+                  [ ];
+              system-config = nixos-system-builder virtual-system-type (
+                args
+                // {
+                  modules = args.modules ++ extra-modules;
+                }
+              );
               image-variant = get-image-variant virtual-system-type;
               image-output =
                 builtins.attrByPath [
@@ -183,7 +197,7 @@ in
             else
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide the `${image-variant}` image variant.";
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide the `${image-variant}` image variant. See the NixOS manual for supported nixos-rebuild build-image variants.";
               image-output
           darwin-system-builder =
             args:
