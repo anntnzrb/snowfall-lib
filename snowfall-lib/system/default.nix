@@ -138,7 +138,7 @@ in
         let
           virtual-system-type = get-virtual-system-type target;
           is-vm-no-gui = virtual-system-type == "vm-nogui";
-          vm-variants = [
+          vm-output-variants = [
             "vm"
             "vm-nogui"
           ];
@@ -164,7 +164,7 @@ in
             core-inputs.nixpkgs.lib.nixosSystem (
               args
               // {
-                specialArgs = args.specialArgs // {
+                specialArgs = (args.specialArgs or { }) // {
                   inherit format;
                 };
                 modules = args.modules ++ extra-modules ++ [
@@ -191,18 +191,19 @@ in
             ) "NixOS system config is unavailable for ${virtual-system-type}.";
             if virtual-system-type == "vm-bootloader" then
               nixos-system.config.system.build.vmWithBootLoader
-            else if builtins.elem virtual-system-type vm-variants then
+            else if builtins.elem virtual-system-type vm-output-variants then
               nixos-system.config.system.build.vm
             else
               let
                 image-variant = get-image-variant virtual-system-type;
+                image-path = [
+                  "system"
+                  "build"
+                  "images"
+                  image-variant
+                ];
                 image-output =
-                  builtins.attrByPath [
-                    "system"
-                    "build"
-                    "images"
-                    image-variant
-                  ] null nixos-system.config;
+                  builtins.attrByPath image-path null nixos-system.config;
                 mapping-note =
                   if image-variant == virtual-system-type then
                     ""
