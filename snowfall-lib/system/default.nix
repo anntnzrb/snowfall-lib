@@ -137,23 +137,54 @@ in
         target:
         let
           virtual-system-type = get-virtual-system-type target;
-          virtual-system-builder =
+          get-image-variant =
+            virtual-format:
+            {
+              "install-iso" = "iso-installer";
+              "install-iso-hyperv" = "iso-installer";
+              "kexec-bundle" = "kexec";
+              "sd-aarch64" = "sd-card";
+              "sd-aarch64-installer" = "sd-card";
+              "sd-x86_64" = "sd-card";
+            }.${virtual-format} or virtual-format;
+          nixos-system-builder =
+            format:
             args:
-            assert assertMsg (
-              user-inputs ? nixos-generators
-            ) "In order to create virtual systems, you must include `nixos-generators` as a flake input.";
-            user-inputs.nixos-generators.nixosGenerate (
+            core-inputs.nixpkgs.lib.nixosSystem (
               args
               // {
-                format = virtual-system-type;
                 specialArgs = args.specialArgs // {
-                  format = virtual-system-type;
+                  inherit format;
                 };
                 modules = args.modules ++ [
                   ../../modules/nixos/user/default.nix
                 ];
               }
             );
+          virtual-system-builder =
+            args:
+            let
+              system-config = nixos-system-builder virtual-system-type args;
+              image-variant = get-image-variant virtual-system-type;
+              image-output =
+                builtins.attrByPath [
+                  "system"
+                  "build"
+                  "images"
+                  image-variant
+                ] null system-config.config;
+            in
+            if virtual-system-type == "vm" then
+              system-config.config.system.build.vm
+            else if virtual-system-type == "vm-bootloader" then
+              system-config.config.system.build.vmWithBootLoader
+            else if virtual-system-type == "vm-nogui" then
+              system-config.config.system.build.vm
+            else
+              assert assertMsg (
+                image-output != null
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide the `${image-variant}` image variant.";
+              image-output
           darwin-system-builder =
             args:
             assert assertMsg (
@@ -174,18 +205,7 @@ in
               }
             );
           linux-system-builder =
-            args:
-            core-inputs.nixpkgs.lib.nixosSystem (
-              args
-              // {
-                specialArgs = args.specialArgs // {
-                  format = "linux";
-                };
-                modules = args.modules ++ [
-                  ../../modules/nixos/user/default.nix
-                ];
-              }
-            );
+            nixos-system-builder "linux";
         in
         if virtual-system-type != "" then
           virtual-system-builder
