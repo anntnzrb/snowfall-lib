@@ -184,15 +184,15 @@ in
                   ]
                 else
                   [ ];
-              nixos-system-config = nixos-system-builder virtual-system-type extra-modules args;
+              nixos-system = nixos-system-builder virtual-system-type extra-modules args;
             in
             assert assertMsg (
-              nixos-system-config ? config
+              nixos-system ? config
             ) "NixOS system config is unavailable for ${virtual-system-type}.";
             if virtual-system-type == "vm-bootloader" then
-              nixos-system-config.config.system.build.vmWithBootLoader
+              nixos-system.config.system.build.vmWithBootLoader
             else if builtins.elem virtual-system-type vm-variants then
-              nixos-system-config.config.system.build.vm
+              nixos-system.config.system.build.vm
             else
               let
                 image-variant = get-image-variant virtual-system-type;
@@ -202,16 +202,11 @@ in
                     "build"
                     "images"
                     image-variant
-                  ] null nixos-system-config.config;
-                mapping-note =
-                  if image-variant == virtual-system-type then
-                    ""
-                  else
-                    " (mapped from ${virtual-system-type} to ${image-variant})";
+                  ] null nixos-system.config;
               in
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant}${mapping-note}. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant}${if image-variant == virtual-system-type then "" else " (mapped from ${virtual-system-type} to ${image-variant})"}. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
               image-output
           darwin-system-builder =
             args:
