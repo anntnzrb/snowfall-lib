@@ -112,7 +112,8 @@ in
               ${namespace} = (prev.${namespace} or { }) // user-packages;
             };
 
-        create-overlay = overlays: file:
+        create-overlay =
+          overlays: file:
           let
             # We are building flake outputs based on file paths. Nix doesn't allow this
             # so we have to explicitly discard the string's path context to use it as an attribute name.

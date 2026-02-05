@@ -43,9 +43,9 @@ in
             # NOTE: home-manager *requires* modules to specify named arguments or it will not
             # pass values in. For this reason we must specify things like `pkgs` as a named attribute.
             ${metadata.name} =
-              args:
+              args@{ pkgs, ... }:
               let
-                system = args.system or args.pkgs.stdenv.hostPlatform.system;
+                system = args.system or pkgs.stdenv.hostPlatform.system;
                 target = args.target or system;
 
                 format =

@@ -214,8 +214,7 @@ in
           };
 
           user-home-modules-list = mapAttrsToList (
-            module-path: module:
-            args:
+            module-path: module: args:
             (module args)
             // {
               _file = "${user-homes-root}/${module-path}/default.nix";
