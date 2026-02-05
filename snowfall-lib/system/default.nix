@@ -188,16 +188,14 @@ in
                   image-variant
                 ] null system-config.config;
             in
-            if virtual-system-type == "vm" then
-              system-config.config.system.build.vm
-            else if virtual-system-type == "vm-bootloader" then
+            if virtual-system-type == "vm-bootloader" then
               system-config.config.system.build.vmWithBootLoader
-            else if virtual-system-type == "vm-nogui" then
+            else if virtual-system-type == "vm" || virtual-system-type == "vm-nogui" then
               system-config.config.system.build.vm
             else
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide the `${image-variant}` image variant. See the NixOS manual for supported nixos-rebuild build-image variants.";
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide the `${image-variant}` image variant. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
               image-output
           darwin-system-builder =
             args:
