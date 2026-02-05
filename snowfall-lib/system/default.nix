@@ -137,6 +137,11 @@ in
         target:
         let
           virtual-system-type = get-virtual-system-type target;
+          is-vm-nogui = virtual-system-type == "vm-nogui";
+          vm-variants = [
+            "vm"
+            "vm-nogui"
+          ];
           # Map legacy nixos-generators formats to nixpkgs build-image variants:
           # - install-iso/install-iso-hyperv -> iso-installer
           # - kexec-bundle -> kexec
@@ -171,7 +176,7 @@ in
             args:
             let
               extra-modules =
-                if virtual-system-type == "vm-nogui" then
+                if is-vm-nogui then
                   [
                     {
                       virtualisation.graphics = false;
@@ -183,7 +188,7 @@ in
             in
             if virtual-system-type == "vm-bootloader" then
               system-config.config.system.build.vmWithBootLoader
-            else if virtual-system-type == "vm" || virtual-system-type == "vm-nogui" then
+            else if builtins.elem virtual-system-type vm-variants then
               system-config.config.system.build.vm
             else
               let
