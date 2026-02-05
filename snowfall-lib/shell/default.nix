@@ -1,5 +1,6 @@
 {
   snowfall-lib,
+  ...
 }:
 {
   shell = {

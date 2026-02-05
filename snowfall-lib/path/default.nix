@@ -1,6 +1,7 @@
 {
   core-inputs,
   snowfall-lib,
+  ...
 }:
 let
   inherit (builtins)

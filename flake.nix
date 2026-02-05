@@ -87,6 +87,25 @@
 
       formatter = eachSystemMap systems (system: treefmtEval.${system}.config.build.wrapper);
 
+      # Regression check: force snowfall-lib evaluation so unexpected-arg errors fail in `nix flake check`.
+      checks = eachSystemMap systems (
+        system:
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+          lib = mkLib {
+            src = self;
+            inputs = inputs // {
+              self = { };
+            };
+          };
+          eval = builtins.tryEval (builtins.attrNames lib.snowfall);
+        in
+        assert eval.success;
+        {
+          snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
+        }
+      );
+
       snowfall = rec {
         raw-config = config;
 

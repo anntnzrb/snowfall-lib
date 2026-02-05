@@ -1,6 +1,6 @@
 {
-  core-inputs,
   snowfall-lib,
+  ...
 }:
 let
 

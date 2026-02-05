@@ -1,5 +1,6 @@
 {
   core-inputs,
+  ...
 }:
 let
   inherit (core-inputs.nixpkgs.lib) id foldr flip;
