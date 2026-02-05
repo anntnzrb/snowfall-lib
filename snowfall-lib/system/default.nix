@@ -203,10 +203,20 @@ in
                     "images"
                     image-variant
                   ] null nixos-system.config;
+                mapping-note =
+                  if image-variant == virtual-system-type then
+                    ""
+                  else
+                    " (mapped from ${virtual-system-type} to ${image-variant})";
+                image-error-message =
+                  "In order to create ${virtual-system-type} systems, nixpkgs must provide "
+                  + "config.system.build.images.${image-variant}"
+                  + mapping-note
+                  + ". See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
               in
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant}${if image-variant == virtual-system-type then "" else " (mapped from ${virtual-system-type} to ${image-variant})"}. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
+              ) image-error-message;
               image-output
           darwin-system-builder =
             args:
