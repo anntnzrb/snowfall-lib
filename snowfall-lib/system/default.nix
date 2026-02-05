@@ -17,6 +17,9 @@ let
     ;
 
   virtual-systems = import ./virtual-systems.nix;
+  nixos-generate = import ./nixos-generate.nix {
+    inherit core-inputs;
+  };
 
   user-systems-root = snowfall-lib.fs.get-snowfall-file "systems";
   user-modules-root = snowfall-lib.fs.get-snowfall-file "modules";
@@ -139,10 +142,7 @@ in
           virtual-system-type = get-virtual-system-type target;
           virtual-system-builder =
             args:
-            assert assertMsg (
-              user-inputs ? nixos-generators
-            ) "In order to create virtual systems, you must include `nixos-generators` as a flake input.";
-            user-inputs.nixos-generators.nixosGenerate (
+            nixos-generate (
               args
               // {
                 format = virtual-system-type;
