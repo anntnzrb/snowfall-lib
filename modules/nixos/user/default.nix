@@ -1,7 +1,6 @@
 args@{
   pkgs,
   lib,
-  options,
   config,
   ...
 }:

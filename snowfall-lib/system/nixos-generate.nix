@@ -5,7 +5,7 @@ args@{
   ...
 }:
 let
-  lib = core-inputs.nixpkgs.lib;
+  inherit (core-inputs.nixpkgs) lib;
   nixosModulesPath = core-inputs.nixpkgs + "/nixos/modules";
 
   nixosArgs = builtins.removeAttrs args [ "format" ];
@@ -57,7 +57,7 @@ let
   getImageVariant =
     variant:
     let
-      config = (mkSystem [ ]).config;
+      inherit ((mkSystem [ ])) config;
       images = getImages config;
     in
     assert lib.assertMsg (lib.hasAttr variant images)
@@ -176,7 +176,7 @@ let
 
   specialHandlers = {
     docker = (mkBuild [ dockerModule ]).tarball;
-    vm = (mkBuild [ vmModule ]).vm;
+    inherit ((mkBuild [ vmModule ])) vm;
     vm-bootloader = (mkBuild [ vmBootloaderModule ]).vm;
     vm-nogui = (mkBuild [ vmNoGuiModule ]).vm;
     iso = (mkBuild [ isoModule ]).isoImage;
@@ -186,7 +186,7 @@ let
     kexec-bundle = (mkBuild [ kexecBundleModule ]).kexec_bundle;
   };
 
-  imageHandlers = lib.mapAttrs (_: variant: getImageVariant variant) imageVariants;
+  imageHandlers = lib.mapAttrs (_: getImageVariant) imageVariants;
   formatHandlers = imageHandlers // specialHandlers;
 in
 formatHandlers.${format} or (throw "Unsupported virtual system format '${format}'.")

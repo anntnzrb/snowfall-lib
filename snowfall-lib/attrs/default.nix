@@ -1,12 +1,8 @@
 {
   core-inputs,
-  user-inputs,
-  snowfall-lib,
-  snowfall-config,
 }:
 let
   inherit (core-inputs.nixpkgs.lib)
-    assertMsg
     mapAttrsToList
     mapAttrs
     flatten
@@ -95,7 +91,7 @@ in
       let
         merged = foldl merge-fn { } items;
       in
-      merged // mapAttrs (name: value: merged.${value}) alias;
+      merged // mapAttrs (_name: value: merged.${value}) alias;
 
     ## Apply aliases and overrides to an already-merged attribute set.
     ## Use this when you have a pre-built attribute set (e.g., from fix).
@@ -108,7 +104,7 @@ in
     apply-aliases-and-overrides =
       items: alias: overrides:
       let
-        aliased = mapAttrs (name: value: items.${value}) alias;
+        aliased = mapAttrs (_name: value: items.${value}) alias;
       in
       items // aliased // overrides;
   };

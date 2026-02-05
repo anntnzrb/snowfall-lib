@@ -9,23 +9,12 @@ let
     assertMsg
     foldl
     head
-    tail
     concatMap
-    optionalAttrs
-    optional
     mkIf
-    filterAttrs
-    mapAttrs'
-    mkMerge
     mapAttrsToList
-    optionals
     mkDefault
-    mkAliasDefinitions
     mkAliasAndWrapDefinitions
-    mkOption
-    types
     hasInfix
-    hasSuffix
     pipe
     ;
 
@@ -41,13 +30,13 @@ in
         # not exist.
         if user-inputs ? home-manager then
           snowfall-lib.internal.system-lib.extend (
-            final: prev:
+            _final: prev:
             # NOTE: This order is important, this library's extend and other utilities must write
             # _over_ the original `system-lib`.
             snowfall-lib.internal.system-lib
             // prev
             // {
-              hm = snowfall-lib.internal.system-lib.home-manager.hm;
+              inherit (snowfall-lib.internal.system-lib.home-manager) hm;
             }
           )
         else
@@ -130,7 +119,7 @@ in
             format = "home";
 
             inputs = snowfall-lib.flake.without-src user-inputs;
-            namespace = snowfall-config.namespace;
+            inherit (snowfall-config) namespace;
 
             # NOTE: home-manager has trouble with `pkgs` recursion if it isn't passed in here.
             inherit pkgs lib;
@@ -226,7 +215,7 @@ in
 
           user-home-modules-list = mapAttrsToList (
             module-path: module:
-            args@{ pkgs, ... }:
+            args:
             (module args)
             // {
               _file = "${user-homes-root}/${module-path}/default.nix";
@@ -296,8 +285,7 @@ in
           };
 
           extra-special-args-module =
-            args@{
-              config,
+            {
               pkgs,
               system ? pkgs.stdenv.hostPlatform.system,
               target ? system,
@@ -337,7 +325,7 @@ in
               other-modules = users.users.${name}.modules or [ ];
               user-name = created-user.specialArgs.user;
             in
-            args@{
+            {
               config,
               options,
               pkgs,
@@ -392,7 +380,7 @@ in
                       (
                         (users.users.${name}.specialArgs or { })
                         // {
-                          namespace = snowfall-config.namespace;
+                          inherit (snowfall-config) namespace;
                         }
                       )
                       [
@@ -407,7 +395,7 @@ in
 
                 home-manager = {
                   users.${user-name} = mkIf config.snowfallorg.users.${user-name}.home.enable (
-                    { pkgs, ... }:
+                    { ... }:
                     {
                       imports = (home-config.imports or [ ]) ++ other-modules ++ [ user-module ];
                       config = builtins.removeAttrs home-config [ "imports" ];

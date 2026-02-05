@@ -6,16 +6,11 @@
 }:
 let
   inherit (builtins) readDir pathExists;
-  inherit (core-inputs) flake-utils-plus;
   inherit (core-inputs.nixpkgs.lib)
-    assertMsg
     filterAttrs
     mapAttrsToList
-    flatten
     pipe
     ;
-
-  file-name-regex = "(.*)\\.(.*)$";
 in
 {
   fs = rec {
@@ -95,7 +90,7 @@ in
     get-entries-by-kind =
       kind-predicate: path:
       pipe (safe-read-directory path) [
-        (filterAttrs (name: kind: kind-predicate kind))
+        (filterAttrs (_name: kind-predicate))
         (mapAttrsToList (name: _: "${path}/${name}"))
       ];
 
@@ -151,7 +146,7 @@ in
       let
         entries = safe-read-directory path;
         filtered-entries = filterAttrs (
-          name: kind: (is-file-kind kind) || (is-directory-kind kind)
+          _name: kind: (is-file-kind kind) || (is-directory-kind kind)
         ) entries;
         map-file =
           name: kind:

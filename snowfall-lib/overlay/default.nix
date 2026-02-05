@@ -6,9 +6,7 @@
 }:
 let
   inherit (core-inputs.nixpkgs.lib)
-    assertMsg
     foldl
-    concatStringsSep
     pipe
     flatten
     ;
@@ -114,8 +112,7 @@ in
               ${namespace} = (prev.${namespace} or { }) // user-packages;
             };
 
-        create-overlay = (
-          overlays: file:
+        create-overlay = overlays: file:
           let
             # We are building flake outputs based on file paths. Nix doesn't allow this
             # so we have to explicitly discard the string's path context to use it as an attribute name.
@@ -145,20 +142,19 @@ in
                 user-overlay-packages = user-overlay final prev-with-packages;
                 outputs = user-overlay-packages;
               in
-              if user-overlay-packages.__dontExport or false == true then
+              if user-overlay-packages.__dontExport or false then
                 outputs // { __dontExport = true; }
               else
                 outputs;
             fake-overlay-result = overlay fake-pkgs fake-pkgs;
           in
-          if fake-overlay-result.__dontExport or false == true then
+          if fake-overlay-result.__dontExport or false then
             overlays
           else
             overlays
             // {
               ${name} = overlay;
-            }
-        );
+            };
 
         overlays = foldl create-overlay { } user-overlays;
 
@@ -171,9 +167,8 @@ in
             # so we have to explicitly discard the string's path context to use it as an attribute name.
             name = builtins.unsafeDiscardStringContext (snowfall-lib.path.get-parent-directory file);
             overlay =
-              final: prev:
+              _final: prev:
               let
-                channels = channel-systems.${prev.system};
                 packages = snowfall-lib.package.create-packages {
                   inherit namespace;
                   channels = channel-systems.${prev.system};

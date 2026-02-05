@@ -1,11 +1,7 @@
 {
   core-inputs,
-  user-inputs,
-  snowfall-lib,
-  snowfall-config,
 }:
 let
-  inherit (builtins) baseNameOf dirOf;
   inherit (core-inputs.nixpkgs.lib) id foldr flip;
 in
 {
@@ -35,7 +31,7 @@ in
       ## 1
       ## ```
       #@ (a -> b) -> a -> b
-      call = f: x: f x;
+      call = f: f;
     in
     {
       inherit compose call;

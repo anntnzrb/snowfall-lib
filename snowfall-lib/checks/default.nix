@@ -1,8 +1,5 @@
 {
-  core-inputs,
-  user-inputs,
   snowfall-lib,
-  snowfall-config,
 }:
 {
   check = {

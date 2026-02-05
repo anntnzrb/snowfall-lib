@@ -1,12 +1,8 @@
 {
   core-inputs,
-  user-inputs,
   snowfall-lib,
-  snowfall-config,
 }:
 let
-  inherit (builtins) baseNameOf;
-  inherit (core-inputs.nixpkgs.lib) assertMsg foldl mapAttrs;
 
   user-templates-root = snowfall-lib.fs.get-snowfall-file "templates";
 in

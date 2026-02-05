@@ -6,7 +6,7 @@ core-inputs: user-options:
 let
   raw-snowfall-config = user-options.snowfall or { };
   snowfall-config = raw-snowfall-config // {
-    src = user-options.src;
+    inherit (user-options) src;
     root = raw-snowfall-config.root or user-options.src;
     namespace = raw-snowfall-config.namespace or "internal";
     meta = {
@@ -16,7 +16,7 @@ let
   };
 
   user-inputs = user-options.inputs // {
-    src = user-options.src;
+    inherit (user-options) src;
   };
 
   inherit (core-inputs.nixpkgs.lib)
@@ -73,7 +73,7 @@ let
   snowfall-lib-dirs =
     let
       files = builtins.readDir snowfall-lib-root;
-      dirs = filterAttrs (name: kind: kind == "directory") files;
+      dirs = filterAttrs (_name: kind: kind == "directory") files;
       names = builtins.attrNames dirs;
     in
     names;
@@ -94,7 +94,7 @@ let
     merge-deep libs
   );
 
-  snowfall-top-level-lib = filterAttrs (name: value: !builtins.isAttrs value) snowfall-lib;
+  snowfall-top-level-lib = filterAttrs (_name: value: !builtins.isAttrs value) snowfall-lib;
 
   base-lib = merge-shallow [
     core-inputs.nixpkgs.lib
@@ -113,7 +113,7 @@ let
       attrs = {
         inherit (user-options) inputs;
         snowfall-inputs = core-inputs;
-        namespace = snowfall-config.namespace;
+        inherit (snowfall-config) namespace;
         lib = merge-shallow [
           base-lib
           { ${snowfall-config.namespace} = user-lib; }

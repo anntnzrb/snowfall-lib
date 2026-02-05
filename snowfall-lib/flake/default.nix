@@ -6,8 +6,6 @@
 }:
 let
   inherit (core-inputs.nixpkgs.lib)
-    assertMsg
-    foldl
     filterAttrs
     const
     mapAttrs
@@ -15,11 +13,9 @@ let
     hasSuffix
     removeSuffix
     nameValuePair
-    traceVal
     pipe
     ;
-in
-let
+
   flake =
     let
       ## Remove the `self` attribute from an attribute set.
@@ -103,8 +99,8 @@ let
       get-libs =
         attrs:
         pipe attrs [
-          (filterAttrs (name: value: builtins.isAttrs (value.lib or null)))
-          (mapAttrs (name: value: value.lib))
+          (filterAttrs (_name: value: builtins.isAttrs (value.lib or null)))
+          (mapAttrs (_name: value: value.lib))
         ];
     };
 
@@ -191,7 +187,7 @@ let
         channelsConfig = full-flake-options.channels-config or full-flake-options.channelsConfig or { };
 
         channels = mapAttrs (
-          channel: config:
+          _channel: config:
           config
           // {
             overlaysBuilder = snowfall-lib.overlay.create-overlays-builder {
@@ -206,7 +202,7 @@ let
         snowfall = {
           config = snowfall-config;
           raw-config = full-flake-options.snowfall or { };
-          user-lib = snowfall-lib.internal.user-lib;
+          inherit (snowfall-lib.internal) user-lib;
         };
       };
 

@@ -5,14 +5,8 @@
   snowfall-config,
 }:
 let
-  inherit (builtins) baseNameOf;
   inherit (core-inputs.nixpkgs.lib)
-    foldl
-    mapAttrs
-    hasSuffix
     isFunction
-    splitString
-    tail
     ;
 
   user-modules-root = snowfall-lib.fs.get-snowfall-file "modules";
@@ -49,7 +43,7 @@ in
             # NOTE: home-manager *requires* modules to specify named arguments or it will not
             # pass values in. For this reason we must specify things like `pkgs` as a named attribute.
             ${metadata.name} =
-              args@{ pkgs, ... }:
+              args:
               let
                 system = args.system or args.pkgs.stdenv.hostPlatform.system;
                 target = args.target or system;
@@ -74,7 +68,7 @@ in
                   lib = snowfall-lib.internal.system-lib;
 
                   inputs = snowfall-lib.flake.without-src user-inputs;
-                  namespace = snowfall-config.namespace;
+                  inherit (snowfall-config) namespace;
                 };
                 imported-user-module = import metadata.path;
                 user-module =

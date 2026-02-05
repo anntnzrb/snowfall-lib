@@ -5,13 +5,10 @@
   snowfall-config,
 }:
 let
-  inherit (core-inputs.flake-utils-plus.lib) filterPackages allSystems;
+  inherit (core-inputs.flake-utils-plus.lib) filterPackages;
   inherit (core-inputs.nixpkgs.lib)
-    assertMsg
     fix
     foldl
-    mapAttrs
-    filterAttrs
     callPackageWith
     ;
 
