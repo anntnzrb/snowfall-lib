@@ -149,6 +149,7 @@ in
             }.${virtual-format} or virtual-format;
           nixos-system-builder =
             format:
+            extra-modules:
             args:
             core-inputs.nixpkgs.lib.nixosSystem (
               args
@@ -156,7 +157,7 @@ in
                 specialArgs = args.specialArgs // {
                   inherit format;
                 };
-                modules = args.modules ++ [
+                modules = args.modules ++ extra-modules ++ [
                   ../../modules/nixos/user/default.nix
                 ];
               }
@@ -173,12 +174,7 @@ in
                   ]
                 else
                   [ ];
-              system-config = nixos-system-builder virtual-system-type (
-                args
-                // {
-                  modules = args.modules ++ extra-modules;
-                }
-              );
+              system-config = nixos-system-builder virtual-system-type extra-modules args;
               image-variant = get-image-variant virtual-system-type;
               image-output =
                 builtins.attrByPath [
@@ -195,7 +191,7 @@ in
             else
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide the `${image-variant}` image variant. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant}. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
               image-output
           darwin-system-builder =
             args:
@@ -217,7 +213,7 @@ in
               }
             );
           linux-system-builder =
-            nixos-system-builder "linux";
+            nixos-system-builder "linux" [ ];
         in
         if virtual-system-type != "" then
           virtual-system-builder
