@@ -137,7 +137,7 @@ in
         target:
         let
           virtual-system-type = get-virtual-system-type target;
-          is-vm-nogui = virtual-system-type == "vm-nogui";
+          is-vm-no-gui = virtual-system-type == "vm-nogui";
           vm-variants = [
             "vm"
             "vm-nogui"
@@ -176,7 +176,7 @@ in
             args:
             let
               extra-modules =
-                if is-vm-nogui then
+                if is-vm-no-gui then
                   [
                     {
                       virtualisation.graphics = false;
@@ -184,12 +184,15 @@ in
                   ]
                 else
                   [ ];
-              system-config = nixos-system-builder virtual-system-type extra-modules args;
+              nixos-system-config = nixos-system-builder virtual-system-type extra-modules args;
             in
+            assert assertMsg (
+              nixos-system-config ? config
+            ) "NixOS system config is unavailable for ${virtual-system-type}.";
             if virtual-system-type == "vm-bootloader" then
-              system-config.config.system.build.vmWithBootLoader
+              nixos-system-config.config.system.build.vmWithBootLoader
             else if builtins.elem virtual-system-type vm-variants then
-              system-config.config.system.build.vm
+              nixos-system-config.config.system.build.vm
             else
               let
                 image-variant = get-image-variant virtual-system-type;
@@ -199,7 +202,7 @@ in
                     "build"
                     "images"
                     image-variant
-                  ] null system-config.config;
+                  ] null nixos-system-config.config;
                 mapping-note =
                   if image-variant == virtual-system-type then
                     ""
