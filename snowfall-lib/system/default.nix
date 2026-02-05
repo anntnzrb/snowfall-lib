@@ -180,23 +180,30 @@ in
                 else
                   [ ];
               system-config = nixos-system-builder virtual-system-type extra-modules args;
-              image-variant = get-image-variant virtual-system-type;
-              image-output =
-                builtins.attrByPath [
-                  "system"
-                  "build"
-                  "images"
-                  image-variant
-                ] null system-config.config;
             in
             if virtual-system-type == "vm-bootloader" then
               system-config.config.system.build.vmWithBootLoader
             else if virtual-system-type == "vm" || virtual-system-type == "vm-nogui" then
               system-config.config.system.build.vm
             else
+              let
+                image-variant = get-image-variant virtual-system-type;
+                image-output =
+                  builtins.attrByPath [
+                    "system"
+                    "build"
+                    "images"
+                    image-variant
+                  ] null system-config.config;
+                mapping-note =
+                  if image-variant == virtual-system-type then
+                    ""
+                  else
+                    " (mapped from ${virtual-system-type} to ${image-variant})";
+              in
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant} (mapped from ${virtual-system-type} to ${image-variant}). See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant}${mapping-note}. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
               image-output
           darwin-system-builder =
             args:
