@@ -137,6 +137,8 @@ in
         target:
         let
           virtual-system-type = get-virtual-system-type target;
+          # Map legacy nixos-generators formats to nixpkgs build-image variants; unmapped
+          # formats continue to use their original names.
           get-image-variant =
             virtual-format:
             {
@@ -191,7 +193,7 @@ in
             else
               assert assertMsg (
                 image-output != null
-              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant}. See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
+              ) "In order to create ${virtual-system-type} systems, nixpkgs must provide config.system.build.images.${image-variant} (resolved from ${virtual-system-type}). See https://nixos.org/manual/nixos/stable/#sec-image-nixos-rebuild-build-image for supported variants.";
               image-output
           darwin-system-builder =
             args:
