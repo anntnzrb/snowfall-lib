@@ -69,6 +69,7 @@ in
                   type = types.submoduleWith {
                     specialArgs = {
                       osConfig = config;
+                      systemConfig = config;
                       modulesPath = "${inputs.home-manager}/modules";
                     }
                     // config.home-manager.extraSpecialArgs;
