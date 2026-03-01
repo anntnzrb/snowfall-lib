@@ -96,11 +96,32 @@
             src = self;
             inputs = inputs // {
               self = { };
+              home-manager = {
+                lib.hm = { };
+              };
             };
           };
-          eval = builtins.tryEval (builtins.attrNames lib.snowfall);
+          standalone-home = lib.snowfall.home.create-home {
+            path = ./flake.nix;
+            name = "test@${system}";
+            inherit system;
+          };
+          standalone-special-args = standalone-home.specialArgs;
+          eval = builtins.tryEval {
+            snowfall-attrs = builtins.attrNames lib.snowfall;
+            has-standalone-home-placeholders =
+              (standalone-special-args ? osConfig)
+              && (standalone-special-args.osConfig == null)
+              && (standalone-special-args ? systemConfig)
+              && (standalone-special-args.systemConfig == null);
+            has-system-config-aliases =
+              (builtins.length (builtins.split "systemConfig = config;" (builtins.readFile ./modules/nixos/user/default.nix)) > 1)
+              && (builtins.length (builtins.split "systemConfig = config;" (builtins.readFile ./modules/darwin/user/default.nix)) > 1);
+          };
         in
         assert eval.success;
+        assert eval.value.has-standalone-home-placeholders;
+        assert eval.value.has-system-config-aliases;
         {
           snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
         }

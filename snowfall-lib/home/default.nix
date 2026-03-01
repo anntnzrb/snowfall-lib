@@ -117,6 +117,8 @@ in
             inherit (user-metadata) user host;
 
             format = "home";
+            osConfig = specialArgs.osConfig or null;
+            systemConfig = specialArgs.systemConfig or null;
 
             inputs = snowfall-lib.flake.without-src user-inputs;
             inherit (snowfall-config) namespace;
