@@ -208,8 +208,34 @@ let
 
       flake-utils-plus-outputs = core-inputs.flake-utils-plus.lib.mkFlake flake-options;
 
+      resolve-hosted-home =
+        home-name: home:
+        let
+          host = home.specialArgs.host or "";
+          has-hosted-system = host != "" && systems ? ${host};
+        in
+        if has-hosted-system then
+          let
+            system-output = systems.${host}.output;
+            host-config = flake-utils-plus-outputs.${system-output}.${host}.config;
+          in
+          home.builder {
+            inherit (home) modules;
+            specialArgs = home.specialArgs // {
+              osConfig = host-config;
+              systemConfig = host-config;
+            };
+          }
+        else
+          flake-utils-plus-outputs.homeConfigurations.${home-name};
+
+      # Hosted homes need their parent system config injected before standalone
+      # homeConfigurations or activation packages are forced.
+      home-configurations = mapAttrs resolve-hosted-home homes;
+
       flake-outputs = flake-utils-plus-outputs // {
         inherit overlays;
+        homeConfigurations = home-configurations;
       };
     in
     flake-outputs
