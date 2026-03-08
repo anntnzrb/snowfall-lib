@@ -86,6 +86,89 @@ let
           "snowfall"
         ];
 
+      ## Resolve the parent system config for an exported home configuration.
+      ## Explicit `user@host` names map directly. Hostless names end up normalized
+      ## to `user@system`, so fall back to a unique system-target match.
+      #@ Attrs -> Attrs | Null
+      resolve-exported-home-host-config =
+        {
+          home,
+          systems,
+          flake-outputs,
+        }:
+        let
+          get-host-config =
+            host-name:
+            let
+              system-output = systems.${host-name}.output;
+            in
+            flake-outputs.${system-output}.${host-name}.config;
+
+          requested-host = home.specialArgs.host or "";
+          requested-system = home.system or "";
+          requested-user = home.specialArgs.user or "";
+          host-candidates =
+            if requested-host != "" && systems ? ${requested-host} then
+              [ requested-host ]
+            else
+              pipe systems [
+                (filterAttrs (
+                  host-name: system-config:
+                  let
+                    host-config = get-host-config host-name;
+                    matches-explicit-target =
+                      requested-host != ""
+                      && system-config.system == requested-host
+                      && requested-user != ""
+                      && builtins.hasAttr requested-user (host-config.home-manager.users or { });
+                    matches-hostless-home =
+                      requested-host == ""
+                      && system-config.system == requested-system
+                      && requested-user != ""
+                      && builtins.hasAttr requested-user (host-config.home-manager.users or { });
+                  in
+                  matches-explicit-target || matches-hostless-home
+                ))
+                builtins.attrNames
+              ];
+        in
+        if builtins.length host-candidates == 1 then
+          get-host-config (builtins.head host-candidates)
+        else
+          null;
+
+      ## Rebuild a hosted home export with the resolved parent system config so
+      ## Home Manager module arguments stay consistent on export paths.
+      #@ Attrs -> Attrs
+      resolve-exported-home =
+        {
+          home-name,
+          home,
+          systems,
+          flake-outputs,
+        }:
+        let
+          host-config = flake.resolve-exported-home-host-config {
+            inherit home systems flake-outputs;
+          };
+          hosted-special-args =
+            if host-config != null then
+              {
+                osConfig = host-config;
+                systemConfig = host-config;
+              }
+              // (host-config.home-manager.extraSpecialArgs or { })
+            else
+              { };
+        in
+        if host-config != null then
+          home.builder {
+            inherit (home) modules;
+            specialArgs = home.specialArgs // hosted-special-args;
+          }
+        else
+          flake-outputs.homeConfigurations.${home-name};
+
       ## Transform an attribute set of inputs into an attribute set where the values are the inputs' `lib` attribute. Entries without a `lib` attribute are removed.
       ## Example Usage:
       ## ```nix
@@ -208,30 +291,15 @@ let
 
       flake-utils-plus-outputs = core-inputs.flake-utils-plus.lib.mkFlake flake-options;
 
-      resolve-hosted-home =
-        home-name: home:
-        let
-          host = home.specialArgs.host or "";
-          has-hosted-system = host != "" && systems ? ${host};
-        in
-        if has-hosted-system then
-          let
-            system-output = systems.${host}.output;
-            host-config = flake-utils-plus-outputs.${system-output}.${host}.config;
-          in
-          home.builder {
-            inherit (home) modules;
-            specialArgs = home.specialArgs // {
-              osConfig = host-config;
-              systemConfig = host-config;
-            };
-          }
-        else
-          flake-utils-plus-outputs.homeConfigurations.${home-name};
-
       # Hosted homes need their parent system config injected before standalone
       # homeConfigurations or activation packages are forced.
-      home-configurations = mapAttrs resolve-hosted-home homes;
+      home-configurations = mapAttrs (
+        home-name: home:
+        flake.resolve-exported-home {
+          inherit home-name home systems;
+          flake-outputs = flake-utils-plus-outputs;
+        }
+      ) homes;
 
       flake-outputs = flake-utils-plus-outputs // {
         inherit overlays;
