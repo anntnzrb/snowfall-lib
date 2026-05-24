@@ -106,6 +106,33 @@
             name = "test@${system}";
             inherit system;
           };
+          private-systems-lib = mkLib {
+            src = ./tests/fixtures/private-systems;
+            inputs = inputs // {
+              self = { };
+              home-manager = {
+                lib.hm = { };
+                nixosModules.home-manager = "home-manager-module";
+                darwinModules.home-manager = "darwin-home-manager-module";
+              };
+            };
+          };
+          private-systems-no-home-manager-lib = mkLib {
+            src = ./tests/fixtures/private-systems;
+            inputs = builtins.removeAttrs (inputs // { self = { }; }) [ "home-manager" ];
+          };
+          private-system-collision-lib = mkLib {
+            src = ./tests/fixtures/private-system-collision;
+            inputs = inputs // {
+              self = { };
+            };
+          };
+          private-systems = private-systems-lib.snowfall.system.create-systems { };
+          private-systems-no-home-manager =
+            private-systems-no-home-manager-lib.snowfall.system.create-systems { };
+          private-system-collision = builtins.tryEval (
+            private-system-collision-lib.snowfall.system.create-systems { }
+          );
           standalone-special-args = standalone-home.specialArgs;
           exported-home-name = "test@${system}";
           resolved-exported-home = lib.snowfall.flake.resolve-exported-home {
@@ -182,6 +209,16 @@
               && (resolved-exported-home.osConfig.hostName == "test-host")
               && (resolved-exported-home ? standaloneOnly)
               && resolved-exported-home.standaloneOnly;
+            private-system-normalizes-name = builtins.attrNames private-systems == [
+              "normal"
+              "private"
+            ];
+            private-system-skips-auto-modules = builtins.length private-systems.private.modules == 1;
+            normal-system-keeps-auto-modules =
+              builtins.length private-systems-no-home-manager.normal.modules
+              > builtins.length private-systems-no-home-manager.private.modules;
+            private-system-skips-home-manager = !(private-systems.private.specialArgs ? homeManager);
+            private-system-rejects-collision = !private-system-collision.success;
             strips-bare-home-package-alias = bare-name-package-alias == "homeConfigurations-test";
           };
         in
@@ -189,6 +226,11 @@
         assert eval.value.has-standalone-home-placeholders;
         assert eval.value.has-system-config-aliases;
         assert eval.value.resolves-exported-home-extra-special-args;
+        assert eval.value.private-system-normalizes-name;
+        assert eval.value.private-system-skips-auto-modules;
+        assert eval.value.normal-system-keeps-auto-modules;
+        assert eval.value.private-system-skips-home-manager;
+        assert eval.value.private-system-rejects-collision;
         assert eval.value.strips-bare-home-package-alias;
         {
           snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";

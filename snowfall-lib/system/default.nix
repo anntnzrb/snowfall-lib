@@ -13,6 +13,7 @@ let
     concatMap
     foldl
     optionals
+    unique
     ;
 
   virtual-systems = import ./virtual-systems.nix;
@@ -110,17 +111,28 @@ in
         target:
         let
           existing-systems = snowfall-lib.fs.get-directories-with-default target;
-          create-system-metadata = path: {
-            path = "${path}/default.nix";
-            # We are building flake outputs based on file contents. Nix doesn't like this
-            # so we have to explicitly discard the string's path context to allow us to
-            # use the name as a variable.
-            name = builtins.unsafeDiscardStringContext (builtins.baseNameOf path);
-            # We are building flake outputs based on file contents. Nix doesn't like this
-            # so we have to explicitly discard the string's path context to allow us to
-            # use the name as a variable.
-            target = builtins.unsafeDiscardStringContext (builtins.baseNameOf target);
-          };
+          create-system-metadata =
+            path:
+            let
+              directory = builtins.unsafeDiscardStringContext (builtins.baseNameOf path);
+              private = builtins.substring 0 1 directory == "_";
+            in
+            {
+              path = "${path}/default.nix";
+              # We are building flake outputs based on file contents. Nix doesn't like this
+              # so we have to explicitly discard the string's path context to allow us to
+              # use the name as a variable.
+              name =
+                if private then
+                  builtins.substring 1 (builtins.stringLength directory - 1) directory
+                else
+                  directory;
+              inherit private;
+              # We are building flake outputs based on file contents. Nix doesn't like this
+              # so we have to explicitly discard the string's path context to allow us to
+              # use the name as a variable.
+              target = builtins.unsafeDiscardStringContext (builtins.baseNameOf target);
+            };
           system-configurations = builtins.map create-system-metadata existing-systems;
         in
         system-configurations;
@@ -258,6 +270,7 @@ in
           output ? get-system-output target,
           systems ? { },
           homes ? { },
+          homeManager ? true,
         }:
         let
           lib = snowfall-lib.internal.system-lib;
@@ -277,7 +290,7 @@ in
             output
             ;
 
-          modules = [ path ] ++ modules ++ (optionals (user-inputs ? home-manager) home-manager-modules);
+          modules = [ path ] ++ modules ++ (optionals ((user-inputs ? home-manager) && homeManager) home-manager-modules);
 
           specialArgs = specialArgs // {
             inherit
@@ -312,6 +325,7 @@ in
         let
           targets = snowfall-lib.fs.get-directories user-systems-root;
           target-systems-metadata = concatMap get-target-systems-metadata targets;
+          system-names = builtins.map (system: system.name) target-systems-metadata;
           user-nixos-modules = snowfall-lib.module.create-modules {
             src = "${user-modules-root}/nixos";
           };
@@ -326,16 +340,17 @@ in
             let
               overrides = systems.hosts.${system-metadata.name} or { };
               user-modules = if is-darwin system-metadata.target then user-darwin-modules else user-nixos-modules;
-              user-modules-list = builtins.attrValues user-modules;
+              user-modules-list = optionals (!system-metadata.private) (builtins.attrValues user-modules);
               system-modules = if is-darwin system-metadata.target then darwin-modules else nixos-modules;
             in
             {
               ${system-metadata.name} = create-system (
                 overrides
-                // system-metadata
+                // (builtins.removeAttrs system-metadata [ "private" ])
                 // {
                   systems = created-systems;
                   modules = user-modules-list ++ (overrides.modules or [ ]) ++ system-modules;
+                  homeManager = overrides.homeManager or (!system-metadata.private);
                   inherit homes;
                 }
               );
@@ -347,6 +362,9 @@ in
             ) { } target-systems-metadata
           );
         in
+        assert assertMsg (
+          builtins.length system-names == builtins.length (unique system-names)
+        ) "System names must be unique after private system normalization.";
         created-systems;
     in
     {
