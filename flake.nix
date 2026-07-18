@@ -237,6 +237,27 @@
         {
           snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
         }
+        // inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
+          let
+            nixos-smoke-lib = mkLib {
+              src = ./tests/fixtures/nixos-smoke;
+              inputs = inputs // {
+                self = { };
+              };
+            };
+            nixos-smoke-definition = (nixos-smoke-lib.snowfall.system.create-systems { }).smoke;
+            nixos-smoke-system = nixos-smoke-definition.builder {
+              inherit (nixos-smoke-definition) system modules specialArgs;
+            };
+            kernel = nixos-smoke-system.config.boot.kernelPackages.kernel;
+          in
+          {
+            snowfall-lib-nixos-smoke =
+              assert kernel ? buildDTBs;
+              assert kernel ? target;
+              nixos-smoke-system.config.system.build.toplevel;
+          }
+        )
       );
 
       snowfall = rec {
