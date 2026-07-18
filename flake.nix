@@ -129,7 +129,8 @@
           };
           private-systems = private-systems-lib.snowfall.system.create-systems { };
           private-systems-no-home-manager =
-            private-systems-no-home-manager-lib.snowfall.system.create-systems { };
+            private-systems-no-home-manager-lib.snowfall.system.create-systems
+              { };
           private-system-collision = builtins.tryEval (
             private-system-collision-lib.snowfall.system.create-systems { }
           );
@@ -209,10 +210,11 @@
               && (resolved-exported-home.osConfig.hostName == "test-host")
               && (resolved-exported-home ? standaloneOnly)
               && resolved-exported-home.standaloneOnly;
-            private-system-normalizes-name = builtins.attrNames private-systems == [
-              "normal"
-              "private"
-            ];
+            private-system-normalizes-name =
+              builtins.attrNames private-systems == [
+                "normal"
+                "private"
+              ];
             private-system-skips-auto-modules = builtins.length private-systems.private.modules == 1;
             normal-system-keeps-auto-modules =
               builtins.length private-systems-no-home-manager.normal.modules
