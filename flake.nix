@@ -107,7 +107,7 @@
             inherit system;
           };
           private-systems-lib = mkLib {
-            src = ./tests/fixtures/private-systems;
+            src = "${self}/tests/fixtures/private-systems";
             inputs = inputs // {
               self = { };
               home-manager = {
@@ -118,11 +118,11 @@
             };
           };
           private-systems-no-home-manager-lib = mkLib {
-            src = ./tests/fixtures/private-systems;
+            src = "${self}/tests/fixtures/private-systems";
             inputs = builtins.removeAttrs (inputs // { self = { }; }) [ "home-manager" ];
           };
           private-system-collision-lib = mkLib {
-            src = ./tests/fixtures/private-system-collision;
+            src = "${self}/tests/fixtures/private-system-collision";
             inputs = inputs // {
               self = { };
             };
@@ -240,7 +240,7 @@
         // inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
           let
             nixos-smoke-lib = mkLib {
-              src = ./tests/fixtures/nixos-smoke;
+              src = "${self}/tests/fixtures/nixos-smoke";
               inputs = inputs // {
                 self = { };
               };
