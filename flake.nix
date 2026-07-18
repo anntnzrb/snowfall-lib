@@ -11,19 +11,28 @@
   };
 
   outputs =
-    {
-      self,
-      ...
-    }@inputs:
+    { self, ... }@inputs:
     let
       core-inputs = inputs // {
         src = self;
       };
       systems = inputs.nixpkgs.lib.systems.flakeExposed;
+      # nixfmt's GHC toolchain cannot bootstrap on the remaining exposed
+      # systems.
+      strictToolchainSystems = [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "i686-linux"
+        "x86_64-linux"
+      ];
       inherit (inputs.flake-utils-plus.lib) eachSystemMap;
       treefmtEval = eachSystemMap systems (
         system:
-        inputs.treefmt-nix.lib.evalModule inputs.nixpkgs.legacyPackages.${system} {
+        let
+          pkgs = inputs.nixpkgs.legacyPackages.${system};
+          shellToolsSupported = system != "riscv64-linux";
+        in
+        inputs.treefmt-nix.lib.evalModule pkgs {
           projectRootFile = "flake.nix";
 
           programs = {
@@ -33,10 +42,50 @@
               no-lambda-pattern-names = false;
               no-underscore = false;
             };
-            nixfmt.enable = true;
+            nixfmt = {
+              enable = true;
+              strict = true;
+              width = 80;
+            };
+            shellcheck = {
+              enable = shellToolsSupported;
+              external-sources = true;
+              extra-checks = [ "all" ];
+              severity = "style";
+              source-path = "SCRIPTDIR";
+            };
+            shfmt = {
+              enable = shellToolsSupported;
+              indent_size = 4;
+              simplify = true;
+            };
+            actionlint.enable = !pkgs.stdenv.isDarwin;
             statix = {
               enable = true;
               disabled-lints = [ ];
+            };
+          };
+
+          settings.formatter = {
+            deadnix.options = [
+              "--fail"
+              "--warn-used-underscore"
+            ];
+            nixfmt.options = [ "--verify" ];
+            shellcheck.options = [ "--check-sourced" ];
+            shfmt.options = [
+              "-bn"
+              "-ci"
+            ];
+            statix = {
+              command = pkgs.lib.mkForce (
+                pkgs.writeShellScriptBin "statix-check" ''
+                  set -eu
+                  for file in "$@"; do
+                    ${pkgs.lib.getExe pkgs.statix} check "$file"
+                  done
+                ''
+              );
             };
           };
         }
@@ -60,9 +109,7 @@
           ...
         }:
         let
-          lib = mkLib {
-            inherit inputs src snowfall;
-          };
+          lib = mkLib { inherit inputs src snowfall; };
           flake-options = builtins.removeAttrs flake-and-lib-options [
             "inputs"
             "src"
@@ -85,7 +132,13 @@
         user = ./modules/home/user/default.nix;
       };
 
-      formatter = eachSystemMap systems (system: treefmtEval.${system}.config.build.wrapper);
+      formatter = eachSystemMap systems (
+        system: treefmtEval.${system}.config.build.wrapper
+      );
+
+      devShells = eachSystemMap systems (system: {
+        default = treefmtEval.${system}.config.build.devShell;
+      });
 
       # Regression check: force snowfall-lib evaluation so unexpected-arg errors fail in `nix flake check`.
       checks = eachSystemMap systems (
@@ -193,12 +246,16 @@
             has-system-config-aliases =
               (
                 builtins.length (
-                  builtins.split "systemConfig = config;" (builtins.readFile ./modules/nixos/user/default.nix)
+                  builtins.split "systemConfig = config;" (
+                    builtins.readFile ./modules/nixos/user/default.nix
+                  )
                 ) > 1
               )
               && (
                 builtins.length (
-                  builtins.split "systemConfig = config;" (builtins.readFile ./modules/darwin/user/default.nix)
+                  builtins.split "systemConfig = config;" (
+                    builtins.readFile ./modules/darwin/user/default.nix
+                  )
                 ) > 1
               );
             resolves-exported-home-extra-special-args =
@@ -215,13 +272,16 @@
                 "normal"
                 "private"
               ];
-            private-system-skips-auto-modules = builtins.length private-systems.private.modules == 1;
+            private-system-skips-auto-modules =
+              builtins.length private-systems.private.modules == 1;
             normal-system-keeps-auto-modules =
               builtins.length private-systems-no-home-manager.normal.modules
               > builtins.length private-systems-no-home-manager.private.modules;
-            private-system-skips-home-manager = !(private-systems.private.specialArgs ? homeManager);
+            private-system-skips-home-manager =
+              !(private-systems.private.specialArgs ? homeManager);
             private-system-rejects-collision = !private-system-collision.success;
-            strips-bare-home-package-alias = bare-name-package-alias == "homeConfigurations-test";
+            strips-bare-home-package-alias =
+              bare-name-package-alias == "homeConfigurations-test";
           };
         in
         assert eval.success;
@@ -237,6 +297,9 @@
         {
           snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
         }
+        //
+          inputs.nixpkgs.lib.optionalAttrs (builtins.elem system strictToolchainSystems)
+            { formatting = treefmtEval.${system}.config.build.check self; }
         // inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
           let
             nixos-smoke-lib = mkLib {
@@ -245,7 +308,8 @@
                 self = { };
               };
             };
-            nixos-smoke-definition = (nixos-smoke-lib.snowfall.system.create-systems { }).smoke;
+            nixos-smoke-definition =
+              (nixos-smoke-lib.snowfall.system.create-systems { }).smoke;
             nixos-smoke-system = nixos-smoke-definition.builder {
               inherit (nixos-smoke-definition) system modules specialArgs;
             };
