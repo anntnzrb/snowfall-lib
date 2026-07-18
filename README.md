@@ -20,3 +20,17 @@ See the Snowfall Lib [Quickstart](https://snowfall.org/guides/lib/quickstart/) g
 ## Reference
 
 Looking for Snowfall Lib documentation? See the Snowfall Lib [Reference](https://snowfall.org/reference/lib/).
+
+## Continuous Integration
+
+`./scripts/ci/check-flake.sh` runs the same formatting and flake checks locally and in GitHub Actions.
+Pull requests, pushes to `main`, and merge-queue candidates are checked on Linux and macOS.
+
+The weekly lock updater first validates an atomic update of every root input. If that fails, it uses
+a bounded divide-and-conquer search to retain compatible inputs without exponential subset enumeration.
+Run it manually with **Integrate** disabled to validate and retain the candidate artifact without publishing it.
+
+On an unprotected branch, a validated candidate is integrated with an atomic fast-forward. On a protected
+branch, the workflow leaves the pull request to the configured auto-merge or merge-queue policy. Set the
+optional `SNOWFALL_AUTOMATION_TOKEN` secret to a fine-grained PAT when automated pull
+requests must trigger CI without manual workflow approval.
