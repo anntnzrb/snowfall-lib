@@ -123,10 +123,7 @@ in
               # so we have to explicitly discard the string's path context to allow us to
               # use the name as a variable.
               name =
-                if private then
-                  builtins.substring 1 (builtins.stringLength directory - 1) directory
-                else
-                  directory;
+                if private then builtins.substring 1 (builtins.stringLength directory - 1) directory else directory;
               inherit private;
               # We are building flake outputs based on file contents. Nix doesn't like this
               # so we have to explicitly discard the string's path context to allow us to
@@ -290,7 +287,11 @@ in
             output
             ;
 
-          modules = [ path ] ++ modules ++ (optionals ((user-inputs ? home-manager) && homeManager) home-manager-modules);
+          modules = [
+            path
+          ]
+          ++ modules
+          ++ (optionals ((user-inputs ? home-manager) && homeManager) home-manager-modules);
 
           specialArgs = specialArgs // {
             inherit
