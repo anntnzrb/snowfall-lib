@@ -1,7 +1,4 @@
-{
-  core-inputs,
-  ...
-}:
+{ core-inputs, ... }:
 let
   inherit (core-inputs.nixpkgs.lib)
     mapAttrsToList

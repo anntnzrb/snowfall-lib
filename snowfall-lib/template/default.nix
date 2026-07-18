@@ -1,7 +1,4 @@
-{
-  snowfall-lib,
-  ...
-}:
+{ snowfall-lib, ... }:
 let
 
   user-templates-root = snowfall-lib.fs.get-snowfall-file "templates";
@@ -47,13 +44,15 @@ in
           templates
           // {
             ${metadata.name} =
-              (overrides.${metadata.name} or { }) // (builtins.removeAttrs metadata [ "name" ]);
+              (overrides.${metadata.name} or { })
+              // (builtins.removeAttrs metadata [ "name" ]);
           };
         unused-overrides = builtins.removeAttrs overrides (
           builtins.map (metadata: metadata.name) templates-metadata
         );
         templates =
-          snowfall-lib.attrs.merge-with-aliases merge-templates templates-metadata alias // unused-overrides;
+          snowfall-lib.attrs.merge-with-aliases merge-templates templates-metadata alias
+          // unused-overrides;
       in
       templates;
   };

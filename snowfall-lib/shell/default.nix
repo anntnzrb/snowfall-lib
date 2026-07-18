@@ -1,8 +1,4 @@
-{
-  snowfall-lib,
-  ...
-}:
-{
+{ snowfall-lib, ... }: {
   shell = {
     ## Create flake output shells.
     ## Example Usage:
@@ -15,6 +11,7 @@
     ## ```
     #@ Attrs -> Attrs
     create-shells =
-      args: snowfall-lib.internal.create-simple-derivations (args // { type = "shells"; });
+      args:
+      snowfall-lib.internal.create-simple-derivations (args // { type = "shells"; });
   };
 }

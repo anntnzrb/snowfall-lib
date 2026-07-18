@@ -5,11 +5,7 @@
   snowfall-config,
 }:
 let
-  inherit (core-inputs.nixpkgs.lib)
-    foldl
-    pipe
-    flatten
-    ;
+  inherit (core-inputs.nixpkgs.lib) foldl pipe flatten;
 
   user-overlays-root = snowfall-lib.fs.get-snowfall-file "overlays";
   user-packages-root = snowfall-lib.fs.get-snowfall-file "packages";
@@ -108,16 +104,16 @@ in
           if namespace == null then
             user-packages
           else
-            {
-              ${namespace} = (prev.${namespace} or { }) // user-packages;
-            };
+            { ${namespace} = (prev.${namespace} or { }) // user-packages; };
 
         create-overlay =
           overlays: file:
           let
             # We are building flake outputs based on file paths. Nix doesn't allow this
             # so we have to explicitly discard the string's path context to use it as an attribute name.
-            name = builtins.unsafeDiscardStringContext (snowfall-lib.path.get-parent-directory file);
+            name = builtins.unsafeDiscardStringContext (
+              snowfall-lib.path.get-parent-directory file
+            );
             overlay =
               final: prev:
               let
@@ -136,10 +132,7 @@ in
                   if namespace == null then
                     prev // packages
                   else
-                    prev
-                    // {
-                      ${namespace} = (prev.${namespace} or { }) // packages.${namespace};
-                    };
+                    prev // { ${namespace} = (prev.${namespace} or { }) // packages.${namespace}; };
                 user-overlay-packages = user-overlay final prev-with-packages;
                 outputs = user-overlay-packages;
               in
@@ -152,10 +145,7 @@ in
           if fake-overlay-result.__dontExport or false then
             overlays
           else
-            overlays
-            // {
-              ${name} = overlay;
-            };
+            overlays // { ${name} = overlay; };
 
         overlays = foldl create-overlay { } user-overlays;
 
@@ -166,7 +156,9 @@ in
           let
             # We are building flake outputs based on file paths. Nix doesn't allow this
             # so we have to explicitly discard the string's path context to use it as an attribute name.
-            name = builtins.unsafeDiscardStringContext (snowfall-lib.path.get-parent-directory file);
+            name = builtins.unsafeDiscardStringContext (
+              snowfall-lib.path.get-parent-directory file
+            );
             overlay =
               _final: prev:
               let
@@ -184,10 +176,7 @@ in
                   };
                 };
           in
-          package-overlays
-          // {
-            "package/${name}" = overlay;
-          };
+          package-overlays // { "package/${name}" = overlay; };
 
         package-overlays = foldl create-package-overlay { } user-packages;
 
@@ -202,6 +191,11 @@ in
               snowfall-lib.attrs.merge-shallow-packages
             ];
       in
-      package-overlays // overlays // { default = default-overlay; } // extra-overlays;
+      package-overlays
+      // overlays
+      // {
+        default = default-overlay;
+      }
+      // extra-overlays;
   };
 }

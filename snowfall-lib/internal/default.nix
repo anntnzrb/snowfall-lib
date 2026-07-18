@@ -14,10 +14,16 @@ let
 
   inherit (core-inputs.flake-utils-plus.lib) filterPackages;
 
-  core-inputs-libs = snowfall-lib.flake.get-libs (snowfall-lib.flake.without-self core-inputs);
-  user-inputs-libs = snowfall-lib.flake.get-libs (snowfall-lib.flake.without-self user-inputs);
+  core-inputs-libs = snowfall-lib.flake.get-libs (
+    snowfall-lib.flake.without-self core-inputs
+  );
+  user-inputs-libs = snowfall-lib.flake.get-libs (
+    snowfall-lib.flake.without-self user-inputs
+  );
 
-  snowfall-top-level-lib = filterAttrs (_name: value: !builtins.isAttrs value) snowfall-lib;
+  snowfall-top-level-lib = filterAttrs (
+    _name: value: !builtins.isAttrs value
+  ) snowfall-lib;
 
   base-lib = snowfall-lib.attrs.merge-shallow [
     core-inputs.nixpkgs.lib
@@ -95,7 +101,9 @@ in
 
         merge-items = items: metadata: items // { ${metadata.name} = metadata.drv; };
 
-        items = snowfall-lib.attrs.merge-with-aliases merge-items items-metadata alias // overrides;
+        items =
+          snowfall-lib.attrs.merge-with-aliases merge-items items-metadata alias
+          // overrides;
       in
       filterPackages pkgs.stdenv.hostPlatform.system items;
   };

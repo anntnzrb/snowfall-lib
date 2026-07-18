@@ -1,8 +1,4 @@
-{
-  core-inputs,
-  snowfall-lib,
-  ...
-}:
+{ core-inputs, snowfall-lib, ... }:
 let
   inherit (builtins)
     toString
@@ -90,7 +86,10 @@ in
     #@ String -> String -> Bool
     has-file-extension =
       extension: file:
-      if has-any-file-extension file then extension == get-file-extension file else false;
+      if has-any-file-extension file then
+        extension == get-file-extension file
+      else
+        false;
 
     ## Get the parent directory for a given path.
     ## Example Usage:
@@ -162,9 +161,9 @@ in
     get-relative-module-path =
       src: module:
       let
-        path-name = builtins.replaceStrings [ (builtins.toString src) "/default.nix" ] [ "" "" ] (
-          builtins.unsafeDiscardStringContext module
-        );
+        path-name =
+          builtins.replaceStrings [ (builtins.toString src) "/default.nix" ] [ "" "" ]
+            (builtins.unsafeDiscardStringContext module);
       in
       if hasPrefix "/" path-name then
         builtins.substring 1 ((builtins.stringLength path-name) - 1) path-name

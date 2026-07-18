@@ -5,9 +5,7 @@
   snowfall-config,
 }:
 let
-  inherit (core-inputs.nixpkgs.lib)
-    isFunction
-    ;
+  inherit (core-inputs.nixpkgs.lib) isFunction;
 
   user-modules-root = snowfall-lib.fs.get-snowfall-file "modules";
 in
@@ -62,7 +60,8 @@ in
                 # Replicates the specialArgs from Snowfall Lib's system builder.
                 modified-args = args // {
                   inherit system target format;
-                  virtual = args.virtual or (snowfall-lib.system.get-virtual-system-type target != "");
+                  virtual =
+                    args.virtual or (snowfall-lib.system.get-virtual-system-type target != "");
                   systems = args.systems or { };
 
                   lib = snowfall-lib.internal.system-lib;
@@ -79,7 +78,9 @@ in
               in
               user-module // { _file = metadata.path; };
           };
-        modules = snowfall-lib.attrs.merge-with-aliases merge-modules modules-metadata alias // overrides;
+        modules =
+          snowfall-lib.attrs.merge-with-aliases merge-modules modules-metadata alias
+          // overrides;
       in
       modules;
   };

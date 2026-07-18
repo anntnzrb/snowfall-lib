@@ -6,11 +6,7 @@
 }:
 let
   inherit (core-inputs.flake-utils-plus.lib) filterPackages;
-  inherit (core-inputs.nixpkgs.lib)
-    fix
-    foldl
-    callPackageWith
-    ;
+  inherit (core-inputs.nixpkgs.lib) fix foldl callPackageWith;
 
   user-packages-root = snowfall-lib.fs.get-snowfall-file "packages";
 in
@@ -39,11 +35,7 @@ in
         let
           user-packages = snowfall-lib.fs.get-default-nix-files-recursive src;
           merge-packages =
-            packages: metadata:
-            packages
-            // {
-              ${metadata.name} = metadata.drv;
-            };
+            packages: metadata: packages // { ${metadata.name} = metadata.drv; };
           packages-without-aliases = fix (
             packages-without-aliases:
             let
@@ -66,7 +58,9 @@ in
                 {
                   # We are building flake outputs based on file paths. Nix doesn't allow this
                   # so we have to explicitly discard the string's path context to use it as an attribute name.
-                  name = builtins.unsafeDiscardStringContext (snowfall-lib.path.get-parent-directory package);
+                  name = builtins.unsafeDiscardStringContext (
+                    snowfall-lib.path.get-parent-directory package
+                  );
                   drv =
                     let
                       pkg = callPackageWith extra-inputs package { };
@@ -84,7 +78,9 @@ in
             in
             foldl merge-packages { } packages-metadata
           );
-          packages = snowfall-lib.attrs.apply-aliases-and-overrides packages-without-aliases alias overrides;
+          packages =
+            snowfall-lib.attrs.apply-aliases-and-overrides packages-without-aliases alias
+              overrides;
         in
         filterPackages pkgs.stdenv.hostPlatform.system packages;
     in

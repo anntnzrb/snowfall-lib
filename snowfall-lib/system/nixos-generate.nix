@@ -12,20 +12,14 @@ let
 
   mkSystem =
     extraModules:
-    lib.nixosSystem (
-      nixosArgs
-      // {
-        modules = modules ++ extraModules;
-      }
-    );
+    lib.nixosSystem (nixosArgs // { modules = modules ++ extraModules; });
 
   mkBuild = extraModules: (mkSystem extraModules).config.system.build;
 
   getImages =
     config:
-    assert lib.assertMsg (
-      config.system.build ? images
-    ) "Virtual system images require nixpkgs with system.build.images (NixOS 25.05+).";
+    assert lib.assertMsg (config.system.build ? images)
+      "Virtual system images require nixpkgs with system.build.images (NixOS 25.05+).";
     config.system.build.images;
 
   imageVariants = {
@@ -64,29 +58,23 @@ let
       "Virtual system format '${variant}' is not available in this nixpkgs.";
     images.${variant};
 
-  dockerModule =
-    { lib, ... }:
-    {
-      imports = [ "${nixosModulesPath}/virtualisation/docker-image.nix" ];
+  dockerModule = { lib, ... }: {
+    imports = [ "${nixosModulesPath}/virtualisation/docker-image.nix" ];
 
-      boot.loader.grub.enable = lib.mkForce false;
-      boot.loader.systemd-boot.enable = lib.mkForce false;
-      services.journald.console = "/dev/console";
-    };
+    boot.loader.grub.enable = lib.mkForce false;
+    boot.loader.systemd-boot.enable = lib.mkForce false;
+    services.journald.console = "/dev/console";
+  };
 
-  vmModule =
-    { lib, ... }:
-    {
-      imports = [ "${nixosModulesPath}/virtualisation/qemu-vm.nix" ];
-      virtualisation.diskSize = lib.mkDefault (2 * 1024);
-    };
+  vmModule = { lib, ... }: {
+    imports = [ "${nixosModulesPath}/virtualisation/qemu-vm.nix" ];
+    virtualisation.diskSize = lib.mkDefault (2 * 1024);
+  };
 
-  vmBootloaderModule =
-    { ... }:
-    {
-      imports = [ vmModule ];
-      virtualisation.useBootLoader = true;
-    };
+  vmBootloaderModule = { ... }: {
+    imports = [ vmModule ];
+    virtualisation.useBootLoader = true;
+  };
 
   vmNoGuiModule =
     { pkgs, ... }:
@@ -111,38 +99,32 @@ let
       environment.loginShellInit = "${resize}/bin/resize";
     };
 
-  isoModule =
-    { ... }:
-    {
-      imports = [ "${nixosModulesPath}/installer/cd-dvd/iso-image.nix" ];
+  isoModule = { ... }: {
+    imports = [ "${nixosModulesPath}/installer/cd-dvd/iso-image.nix" ];
 
-      isoImage.makeEfiBootable = true;
-      isoImage.makeUsbBootable = true;
-    };
+    isoImage.makeEfiBootable = true;
+    isoImage.makeUsbBootable = true;
+  };
 
-  installIsoModule =
-    { lib, ... }:
-    {
-      imports = [ "${nixosModulesPath}/installer/cd-dvd/installation-cd-base.nix" ];
+  installIsoModule = { lib, ... }: {
+    imports = [ "${nixosModulesPath}/installer/cd-dvd/installation-cd-base.nix" ];
 
-      systemd.services.wpa_supplicant.wantedBy = lib.mkForce [ "multi-user.target" ];
-      systemd.services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
-    };
+    systemd.services.wpa_supplicant.wantedBy = lib.mkForce [ "multi-user.target" ];
+    systemd.services.sshd.wantedBy = lib.mkForce [ "multi-user.target" ];
+  };
 
-  installIsoHypervModule =
-    { lib, ... }:
-    {
-      imports = [ installIsoModule ];
+  installIsoHypervModule = { lib, ... }: {
+    imports = [ installIsoModule ];
 
-      systemd.services.wpa_supplicant.wantedBy = lib.mkOverride 40 [ ];
-      virtualisation.hypervGuest.enable = true;
-    };
+    systemd.services.wpa_supplicant.wantedBy = lib.mkOverride 40 [ ];
+    virtualisation.hypervGuest.enable = true;
+  };
 
-  sdAarch64InstallerModule =
-    { ... }:
-    {
-      imports = [ "${nixosModulesPath}/installer/sd-card/sd-image-aarch64-installer.nix" ];
-    };
+  sdAarch64InstallerModule = { ... }: {
+    imports = [
+      "${nixosModulesPath}/installer/sd-card/sd-image-aarch64-installer.nix"
+    ];
+  };
 
   kexecBundleModule =
     { pkgs, config, ... }:
@@ -189,4 +171,5 @@ let
   imageHandlers = lib.mapAttrs (_: getImageVariant) imageVariants;
   formatHandlers = imageHandlers // specialHandlers;
 in
-formatHandlers.${format} or (throw "Unsupported virtual system format '${format}'.")
+formatHandlers.${format}
+  or (throw "Unsupported virtual system format '${format}'.")

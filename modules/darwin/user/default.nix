@@ -43,8 +43,7 @@ in
       default = { };
       type = types.attrsOf (
         types.submodule (
-          { name, ... }:
-          {
+          { name, ... }: {
             options = {
               create = mkOption {
                 description = "Whether to create the user automatically.";
@@ -74,29 +73,22 @@ in
                     }
                     // config.home-manager.extraSpecialArgs;
                     modules = [
-                      (
-                        {
-                          lib,
-                          modulesPath,
-                          ...
-                        }:
-                        {
-                          imports = import "${modulesPath}/modules.nix" {
-                            inherit pkgs lib;
-                            useNixpkgsModule = !config.home-manager.useGlobalPkgs;
-                          };
+                      ({ lib, modulesPath, ... }: {
+                        imports = import "${modulesPath}/modules.nix" {
+                          inherit pkgs lib;
+                          useNixpkgsModule = !config.home-manager.useGlobalPkgs;
+                        };
 
-                          config = {
-                            submoduleSupport.enable = true;
-                            submoduleSupport.externalPackageInstall = config.home-manager.useUserPackages;
+                        config = {
+                          submoduleSupport.enable = true;
+                          submoduleSupport.externalPackageInstall = config.home-manager.useUserPackages;
 
-                            home.username = config.users.users.${name}.name;
-                            home.homeDirectory = config.users.users.${name}.home;
+                          home.username = config.users.users.${name}.name;
+                          home.homeDirectory = config.users.users.${name}.home;
 
-                            nix.package = config.nix.package;
-                          };
-                        }
-                      )
+                          nix.package = config.nix.package;
+                        };
+                      })
                     ]
                     ++ config.home-manager.sharedModules;
                   };

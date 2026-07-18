@@ -17,9 +17,7 @@ let
     ;
 
   virtual-systems = import ./virtual-systems.nix;
-  nixos-generate = import ./nixos-generate.nix {
-    inherit core-inputs;
-  };
+  nixos-generate = import ./nixos-generate.nix { inherit core-inputs; };
 
   user-systems-root = snowfall-lib.fs.get-snowfall-file "systems";
   user-modules-root = snowfall-lib.fs.get-snowfall-file "modules";
@@ -94,7 +92,10 @@ in
         target:
         foldl (
           result: virtual-system:
-          if result == "" && hasInfix virtual-system target then virtual-system else result
+          if result == "" && hasInfix virtual-system target then
+            virtual-system
+          else
+            result
         ) "" virtual-systems;
 
       ## Get structured data about all systems for a given target.
@@ -123,7 +124,10 @@ in
               # so we have to explicitly discard the string's path context to allow us to
               # use the name as a variable.
               name =
-                if private then builtins.substring 1 (builtins.stringLength directory - 1) directory else directory;
+                if private then
+                  builtins.substring 1 (builtins.stringLength directory - 1) directory
+                else
+                  directory;
               inherit private;
               # We are building flake outputs based on file contents. Nix doesn't like this
               # so we have to explicitly discard the string's path context to allow us to
@@ -157,16 +161,13 @@ in
                 specialArgs = args.specialArgs // {
                   format = virtual-system-type;
                 };
-                modules = args.modules ++ [
-                  ../../modules/nixos/user/default.nix
-                ];
+                modules = args.modules ++ [ ../../modules/nixos/user/default.nix ];
               }
             );
           darwin-system-builder =
             args:
-            assert assertMsg (
-              user-inputs ? darwin
-            ) "In order to create virtual systems, you must include `darwin` as a flake input.";
+            assert assertMsg (user-inputs ? darwin)
+              "In order to create virtual systems, you must include `darwin` as a flake input.";
             user-inputs.darwin.lib.darwinSystem (
               (builtins.removeAttrs args [
                 "system"
@@ -176,9 +177,7 @@ in
                 specialArgs = args.specialArgs // {
                   format = "darwin";
                 };
-                modules = args.modules ++ [
-                  ../../modules/darwin/user/default.nix
-                ];
+                modules = args.modules ++ [ ../../modules/darwin/user/default.nix ];
               }
             );
           linux-system-builder =
@@ -189,9 +188,7 @@ in
                 specialArgs = args.specialArgs // {
                   format = "linux";
                 };
-                modules = args.modules ++ [
-                  ../../modules/nixos/user/default.nix
-                ];
+                modules = args.modules ++ [ ../../modules/nixos/user/default.nix ];
               }
             );
         in
@@ -291,7 +288,9 @@ in
             path
           ]
           ++ modules
-          ++ (optionals ((user-inputs ? home-manager) && homeManager) home-manager-modules);
+          ++ (optionals (
+            (user-inputs ? home-manager) && homeManager
+          ) home-manager-modules);
 
           specialArgs = specialArgs // {
             inherit
@@ -340,9 +339,16 @@ in
             created-systems: system-metadata:
             let
               overrides = systems.hosts.${system-metadata.name} or { };
-              user-modules = if is-darwin system-metadata.target then user-darwin-modules else user-nixos-modules;
-              user-modules-list = optionals (!system-metadata.private) (builtins.attrValues user-modules);
-              system-modules = if is-darwin system-metadata.target then darwin-modules else nixos-modules;
+              user-modules =
+                if is-darwin system-metadata.target then
+                  user-darwin-modules
+                else
+                  user-nixos-modules;
+              user-modules-list = optionals (!system-metadata.private) (
+                builtins.attrValues user-modules
+              );
+              system-modules =
+                if is-darwin system-metadata.target then darwin-modules else nixos-modules;
             in
             {
               ${system-metadata.name} = create-system (
@@ -359,7 +365,8 @@ in
           created-systems = fix (
             created-systems:
             foldl (
-              systems: system-metadata: systems // (create-system' created-systems system-metadata)
+              systems: system-metadata:
+              systems // (create-system' created-systems system-metadata)
             ) { } target-systems-metadata
           );
         in

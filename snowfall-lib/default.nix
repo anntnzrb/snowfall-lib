@@ -55,7 +55,10 @@ let
       let
         value = attrs.${name};
       in
-      if builtins.isAttrs (value.lib or null) then acc // { ${name} = value.lib; } else acc
+      if builtins.isAttrs (value.lib or null) then
+        acc // { ${name} = value.lib; }
+      else
+        acc
     ) { } (builtins.attrNames attrs);
 
   # Remove the `self` attribute from an attribute set.
@@ -89,12 +92,16 @@ let
           user-inputs
           ;
       };
-      libs = builtins.map (dir: import "${snowfall-lib-root}/${dir}" attrs) snowfall-lib-dirs;
+      libs = builtins.map (
+        dir: import "${snowfall-lib-root}/${dir}" attrs
+      ) snowfall-lib-dirs;
     in
     merge-deep libs
   );
 
-  snowfall-top-level-lib = filterAttrs (_name: value: !builtins.isAttrs value) snowfall-lib;
+  snowfall-top-level-lib = filterAttrs (
+    _name: value: !builtins.isAttrs value
+  ) snowfall-lib;
 
   base-lib = merge-shallow [
     core-inputs.nixpkgs.lib

@@ -1,8 +1,4 @@
-{
-  snowfall-lib,
-  ...
-}:
-{
+{ snowfall-lib, ... }: {
   check = {
     ## Create flake output checks.
     ## Example Usage:
@@ -15,6 +11,7 @@
     ## ```
     #@ Attrs -> Attrs
     create-checks =
-      args: snowfall-lib.internal.create-simple-derivations (args // { type = "checks"; });
+      args:
+      snowfall-lib.internal.create-simple-derivations (args // { type = "checks"; });
   };
 }

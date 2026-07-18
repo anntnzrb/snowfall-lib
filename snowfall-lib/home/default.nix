@@ -60,7 +60,8 @@ in
             (builtins.filter builtins.isString)
           ];
           user = builtins.elemAt name-parts 0;
-          host = if builtins.length name-parts > 1 then builtins.elemAt name-parts 1 else "";
+          host =
+            if builtins.length name-parts > 1 then builtins.elemAt name-parts 1 else "";
         in
         {
           inherit user host;
@@ -79,7 +80,9 @@ in
       create-home =
         {
           path,
-          name ? builtins.unsafeDiscardStringContext (snowfall-lib.system.get-inferred-system-name path),
+          name ? builtins.unsafeDiscardStringContext (
+            snowfall-lib.system.get-inferred-system-name path
+          ),
           modules ? [ ],
           specialArgs ? { },
           channelName ? "nixpkgs",
@@ -87,7 +90,8 @@ in
         }:
         let
           user-metadata = split-user-and-host name;
-          unique-name = if user-metadata.host == "" then "${user-metadata.user}@${system}" else name;
+          unique-name =
+            if user-metadata.host == "" then "${user-metadata.user}@${system}" else name;
 
           # NOTE: home-manager has trouble with `pkgs` recursion if it isn't passed in here.
           pkgs = user-inputs.self.pkgs.${system}.${channelName} // {
@@ -141,10 +145,7 @@ in
                   (
                     module-args:
                     import ./nix-registry-module.nix (
-                      module-args
-                      // {
-                        inherit user-inputs core-inputs;
-                      }
+                      module-args // { inherit user-inputs core-inputs; }
                     )
                   )
                   {
@@ -217,10 +218,7 @@ in
 
           user-home-modules-list = mapAttrsToList (
             module-path: module: args:
-            (module args)
-            // {
-              _file = "${user-homes-root}/${module-path}/default.nix";
-            }
+            (module args) // { _file = "${user-homes-root}/${module-path}/default.nix"; }
           ) user-home-modules;
 
           create-home' =
@@ -234,7 +232,10 @@ in
                 overrides
                 // home-metadata
                 // {
-                  modules = user-home-modules-list ++ (homes.users.${name}.modules or [ ]) ++ (homes.modules or [ ]);
+                  modules =
+                    user-home-modules-list
+                    ++ (homes.users.${name}.modules or [ ])
+                    ++ (homes.modules or [ ]);
                 }
               );
             };
@@ -279,9 +280,7 @@ in
             _file = "virtual:snowfallorg/modules/home/user/default.nix";
 
             config = {
-              home-manager.sharedModules = [
-                ../../modules/home/user/default.nix
-              ];
+              home-manager.sharedModules = [ ../../modules/home/user/default.nix ];
             };
           };
 
@@ -335,7 +334,8 @@ in
               ...
             }:
             let
-              host-matches = (name == "${user-name}@${host}") || (name == "${user-name}@${system}");
+              host-matches =
+                (name == "${user-name}@${host}") || (name == "${user-name}@${system}");
 
               # NOTE: To conform to the config structure of home-manager, we have to
               # remap the options coming from `snowfallorg.user.<name>.home.config` since `mkAliasDefinitions`
@@ -396,8 +396,7 @@ in
 
                 home-manager = {
                   users.${user-name} = mkIf config.snowfallorg.users.${user-name}.home.enable (
-                    { ... }:
-                    {
+                    { ... }: {
                       imports = (home-config.imports or [ ]) ++ other-modules ++ [ user-module ];
                       config = builtins.removeAttrs home-config [ "imports" ];
                     }

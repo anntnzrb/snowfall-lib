@@ -227,16 +227,19 @@ let
         channels:
         let
           user-outputs-builder =
-            full-flake-options.outputs-builder or full-flake-options.outputsBuilder or (const { });
+            full-flake-options.outputs-builder or full-flake-options.outputsBuilder
+              or (const { });
           user-outputs = user-outputs-builder channels;
           packages = snowfall-lib.package.create-packages {
             inherit channels namespace;
-            overrides = (full-flake-options.packages or { }) // (user-outputs.packages or { });
+            overrides =
+              (full-flake-options.packages or { }) // (user-outputs.packages or { });
             alias = alias.packages or { };
           };
           shells = snowfall-lib.shell.create-shells {
             inherit channels;
-            overrides = (full-flake-options.shells or { }) // (user-outputs.devShells or { });
+            overrides =
+              (full-flake-options.shells or { }) // (user-outputs.devShells or { });
             alias = alias.shells or { };
           };
           checks = snowfall-lib.check.create-checks {
@@ -267,7 +270,8 @@ let
         darwinModules = darwin-modules;
         homeModules = home-modules;
 
-        channelsConfig = full-flake-options.channels-config or full-flake-options.channelsConfig or { };
+        channelsConfig =
+          full-flake-options.channels-config or full-flake-options.channelsConfig or { };
 
         channels = mapAttrs (
           _channel: config:
@@ -317,7 +321,9 @@ let
               flake-outputs.packages.${system}
               // (pipe homes [
                 (filterAttrs (_: home: home.system == system))
-                (mapAttrs (home-name: _: flake-outputs.homeConfigurations.${home-name}.activationPackage))
+                (mapAttrs (
+                  home-name: _: flake-outputs.homeConfigurations.${home-name}.activationPackage
+                ))
                 (mapAttrs' (
                   name: value:
                   nameValuePair (

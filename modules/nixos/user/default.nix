@@ -51,8 +51,7 @@ in
       default = { };
       type = types.attrsOf (
         types.submodule (
-          { name, ... }:
-          {
+          { name, ... }: {
             options = {
               create = mkOption {
                 description = "Whether to create the user automatically.";
@@ -91,11 +90,7 @@ in
                     // (config.home-manager.extraSpecialArgs or { });
                     modules = [
                       (
-                        {
-                          lib,
-                          modulesPath,
-                          ...
-                        }:
+                        { lib, modulesPath, ... }:
                         if inputs ? home-manager then
                           {
                             imports = import "${modulesPath}/modules.nix" {
