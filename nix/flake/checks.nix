@@ -160,7 +160,7 @@ assert eval.value.strips-bare-home-package-alias;
 }
 //
   inputs.nixpkgs.lib.optionalAttrs (builtins.elem system strictToolchainSystems)
-    { formatting = formatting.check self; }
+    { formatting = formatting.check ../..; }
 // inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
   let
     nixos-smoke-lib = mkLib {
