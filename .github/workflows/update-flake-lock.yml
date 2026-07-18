@@ -1,0 +1,265 @@
+name: Update flake lock
+
+on:
+  schedule:
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      integrate:
+        description: Integrate a passing update into the default branch
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: update-flake-lock
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+    outputs:
+      base_sha: ${{ steps.update.outputs.base_sha }}
+      changed: ${{ steps.update.outputs.changed }}
+      lock_hash: ${{ steps.candidate.outputs.lock_hash }}
+      rejected_inputs: ${{ steps.update.outputs.rejected_inputs }}
+      selected_inputs: ${{ steps.update.outputs.selected_inputs }}
+
+    steps:
+      - name: Check out default branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Update and validate flake inputs
+        id: update
+        shell: sh
+        run: |
+          printf 'base_sha=%s\n' "$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          bash ./scripts/ci/update-flake-inputs.sh
+
+      - name: Record candidate metadata
+        id: candidate
+        if: steps.update.outputs.changed == 'true'
+        env:
+          REJECTED_INPUTS: ${{ steps.update.outputs.rejected_inputs }}
+          SELECTED_INPUTS: ${{ steps.update.outputs.selected_inputs }}
+        shell: sh
+        run: |
+          lock_hash_line=$(shasum -a 256 flake.lock)
+          lock_hash=${lock_hash_line%%[[:space:]]*}
+          printf 'lock_hash=%s\n' "$lock_hash" >> "$GITHUB_OUTPUT"
+          {
+            printf '### Candidate artifact\n\n'
+            printf -- '- Lock hash: %s\n' "$lock_hash"
+            printf -- '- Selected inputs: %s\n' "$SELECTED_INPUTS"
+            printf -- '- Rejected inputs: %s\n' "${REJECTED_INPUTS:-none}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save candidate lock file
+        if: steps.update.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: flake-lock-${{ github.run_id }}
+          path: flake.lock
+          if-no-files-found: error
+          retention-days: 7
+
+  validate-macos:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out validated base
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.update.outputs.base_sha }}
+
+      - name: Restore candidate lock file
+        uses: actions/download-artifact@v8
+        with:
+          name: flake-lock-${{ github.run_id }}
+          path: ${{ runner.temp }}/flake-lock
+
+      - name: Install candidate lock file
+        shell: sh
+        run: cp "${RUNNER_TEMP}/flake-lock/flake.lock" flake.lock
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Verify candidate artifact
+        env:
+          EXPECTED_LOCK_HASH: ${{ needs.update.outputs.lock_hash }}
+        shell: sh
+        run: |
+          actual_lock_hash_line=$(shasum -a 256 flake.lock)
+          actual_lock_hash=${actual_lock_hash_line%%[[:space:]]*}
+          if [ "$actual_lock_hash" != "$EXPECTED_LOCK_HASH" ]; then
+            printf 'Lock artifact hash mismatch: expected %s, got %s\n' \
+              "$EXPECTED_LOCK_HASH" "$actual_lock_hash" >&2
+            exit 1
+          fi
+
+      - name: Check candidate on macOS
+        shell: sh
+        run: ./scripts/ci/check-flake.sh
+
+  publish:
+    needs:
+      - update
+      - validate-macos
+    if: >-
+      needs.update.outputs.changed == 'true' &&
+      (github.event_name == 'schedule' || inputs.integrate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.SNOWFALL_AUTOMATION_TOKEN || github.token }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      UPDATE_BRANCH: automation/update-flake-lock
+
+    steps:
+      - name: Check out validated base
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.update.outputs.base_sha }}
+          token: ${{ secrets.SNOWFALL_AUTOMATION_TOKEN || github.token }}
+
+      - name: Restore candidate lock file
+        uses: actions/download-artifact@v8
+        with:
+          name: flake-lock-${{ github.run_id }}
+          path: ${{ runner.temp }}/flake-lock
+
+      - name: Publish validated update
+        env:
+          BASE_SHA: ${{ needs.update.outputs.base_sha }}
+          EXPECTED_LOCK_HASH: ${{ needs.update.outputs.lock_hash }}
+          REJECTED_INPUTS: ${{ needs.update.outputs.rejected_inputs }}
+          SELECTED_INPUTS: ${{ needs.update.outputs.selected_inputs }}
+        shell: sh
+        run: |
+          set -eu
+
+          cp "${RUNNER_TEMP}/flake-lock/flake.lock" flake.lock
+          actual_lock_hash_line=$(shasum -a 256 flake.lock)
+          actual_lock_hash=${actual_lock_hash_line%%[[:space:]]*}
+          if [ "$actual_lock_hash" != "$EXPECTED_LOCK_HASH" ]; then
+            printf 'Lock artifact hash mismatch: expected %s, got %s\n' \
+              "$EXPECTED_LOCK_HASH" "$actual_lock_hash" >&2
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.lock
+          git commit -m "flake: update ${SELECTED_INPUTS}"
+
+          remote_update_ref=$(git ls-remote --heads origin "refs/heads/${UPDATE_BRANCH}")
+          remote_update_sha=${remote_update_ref%%[[:space:]]*}
+          if [ -n "$remote_update_sha" ]; then
+            git push \
+              --force-with-lease="refs/heads/${UPDATE_BRANCH}:${remote_update_sha}" \
+              origin "HEAD:refs/heads/${UPDATE_BRANCH}"
+          else
+            git push origin "HEAD:refs/heads/${UPDATE_BRANCH}"
+          fi
+
+          find_update_pr() {
+            gh api \
+              --method GET \
+              "repos/${GITHUB_REPOSITORY}/pulls" \
+              -f state=open \
+              -f base="$DEFAULT_BRANCH" \
+              -f head="${GITHUB_REPOSITORY_OWNER}:${UPDATE_BRANCH}" \
+              --jq '.[0].number // empty'
+          }
+
+          pr_number=$(find_update_pr)
+
+          if [ -z "$pr_number" ]; then
+            gh pr create \
+              --base "$DEFAULT_BRANCH" \
+              --head "$UPDATE_BRANCH" \
+              --title "flake: update inputs" \
+              --body "Validated on Linux and macOS against base ${BASE_SHA} with \`scripts/ci/check-flake.sh\`. Selected inputs: ${SELECTED_INPUTS}. Rejected inputs: ${REJECTED_INPUTS:-none}. Artifact: ${EXPECTED_LOCK_HASH}. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}." \
+              >/dev/null
+            pr_number=$(find_update_pr)
+            if [ -z "$pr_number" ]; then
+              printf 'Pull request creation succeeded but lookup returned no result.\n' >&2
+              exit 1
+            fi
+          else
+            gh api \
+              --method PATCH \
+              "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" \
+              -f title="flake: update inputs" \
+              -f body="Validated on Linux and macOS against base ${BASE_SHA} with \`scripts/ci/check-flake.sh\`. Selected inputs: ${SELECTED_INPUTS}. Rejected inputs: ${REJECTED_INPUTS:-none}. Artifact: ${EXPECTED_LOCK_HASH}. Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}." \
+              >/dev/null
+          fi
+
+          local_head_sha=$(git rev-parse HEAD)
+          pr_head_sha=$(gh api \
+            "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" \
+            --jq '.head.sha')
+          if [ "$pr_head_sha" != "$local_head_sha" ]; then
+            printf 'PR #%s head mismatch: expected %s, got %s\n' \
+              "$pr_number" "$local_head_sha" "$pr_head_sha" >&2
+            exit 1
+          fi
+
+          git fetch --quiet origin "${DEFAULT_BRANCH}"
+          current_base=$(git rev-parse "origin/${DEFAULT_BRANCH}")
+          if [ "$current_base" != "$BASE_SHA" ]; then
+            gh pr close "$pr_number" --comment "Closing because ${DEFAULT_BRANCH} moved after validation; the next run will rebase and revalidate."
+            git push origin --delete "$UPDATE_BRANCH" || true
+            echo "${DEFAULT_BRANCH} moved from ${BASE_SHA} to ${current_base}; discarded stale PR #${pr_number}." >&2
+            exit 1
+          fi
+
+          # A non-forced fast-forward is the final race check: if the base moves
+          # after the fetch above, Git rejects the integration instead of merging
+          # an unvalidated combination of commits.
+          if ! git push origin "HEAD:refs/heads/${DEFAULT_BRANCH}"; then
+            git fetch --quiet origin "${DEFAULT_BRANCH}"
+            current_base=$(git rev-parse "origin/${DEFAULT_BRANCH}")
+            if [ "$current_base" != "$BASE_SHA" ]; then
+              gh pr close "$pr_number" --comment "Closing because ${DEFAULT_BRANCH} moved during integration; the next run will rebase and revalidate."
+              git push origin --delete "$UPDATE_BRANCH" || true
+              echo "Atomic integration failed for stale PR #${pr_number}." >&2
+              exit 1
+            fi
+
+            if gh pr merge "$pr_number" \
+              --auto \
+              --rebase \
+              --match-head-commit "$(git rev-parse HEAD)"; then
+              printf 'Protected branch detected; PR #%s was submitted for policy-controlled merge.\n' \
+                "$pr_number" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            echo "Atomic integration and policy-controlled merge both failed for PR #${pr_number}." >&2
+            exit 1
+          fi
+
+          git push origin --delete "$UPDATE_BRANCH" || true
+          printf 'Integrated PR #%s with an atomic fast-forward.\n' \
+            "$pr_number" >> "$GITHUB_STEP_SUMMARY"
