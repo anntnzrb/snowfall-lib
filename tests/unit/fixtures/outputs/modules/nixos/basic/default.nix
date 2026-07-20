@@ -1,0 +1,19 @@
+{
+  system,
+  target,
+  format,
+  virtual,
+  namespace,
+  ...
+}:
+{
+  config.fixture = {
+    inherit
+      system
+      target
+      format
+      virtual
+      namespace
+      ;
+  };
+}

@@ -1,0 +1,1 @@
+{ config.fixture.static = true; }

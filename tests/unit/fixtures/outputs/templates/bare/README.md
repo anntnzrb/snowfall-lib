@@ -1,0 +1,1 @@
+Fixture without a flake.
