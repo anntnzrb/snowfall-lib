@@ -137,6 +137,14 @@ let
     strips-bare-home-package-alias =
       bare-name-package-alias == "homeConfigurations-test";
   };
+  regression-tests = inputs.nixpkgs.lib.mapAttrs' (
+    name: value:
+    inputs.nixpkgs.lib.nameValuePair "test-${name}" {
+      expr = value;
+      expected = true;
+    }
+  ) (inputs.nixpkgs.lib.filterAttrs (_: builtins.isBool) eval.value);
+  regression-failures = inputs.nixpkgs.lib.runTests regression-tests;
   # nixfmt's GHC toolchain cannot bootstrap on the remaining exposed systems.
   strictToolchainSystems = [
     "aarch64-darwin"
@@ -146,17 +154,12 @@ let
   ];
 in
 assert eval.success;
-assert eval.value.has-standalone-home-placeholders;
-assert eval.value.has-system-config-aliases;
-assert eval.value.resolves-exported-home-extra-special-args;
-assert eval.value.private-system-normalizes-name;
-assert eval.value.private-system-skips-auto-modules;
-assert eval.value.normal-system-keeps-auto-modules;
-assert eval.value.private-system-skips-home-manager;
-assert eval.value.private-system-rejects-collision;
-assert eval.value.strips-bare-home-package-alias;
 {
-  snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
+  snowfall-lib-eval =
+    assert inputs.nixpkgs.lib.assertMsg (regression-failures == [ ]) (
+      "Snowfall evaluation regressions:\n" + builtins.toJSON regression-failures
+    );
+    pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
   unit = import ./unit.nix { inherit inputs self system; };
 }
 //
