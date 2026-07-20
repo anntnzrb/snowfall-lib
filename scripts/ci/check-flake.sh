@@ -2,6 +2,8 @@
 
 set -eu
 
+./tests/ci/update-flake-inputs.sh
+
 nix run \
     --no-update-lock-file \
     --no-write-lock-file \

@@ -196,11 +196,17 @@ assert eval.success;
       inherit (nixos-smoke-definition) system modules specialArgs;
     };
     kernel = nixos-smoke-system.config.boot.kernelPackages.kernel;
+    vm-tests = import ../../tests/vm {
+      snowfall = self;
+      inherit inputs pkgs;
+    };
   in
   {
     snowfall-lib-nixos-smoke =
       assert kernel ? buildDTBs;
       assert kernel ? target;
       nixos-smoke-system.config.system.build.toplevel;
+    snowfall-lib-vm-generated-host = vm-tests.generated-host;
+    snowfall-lib-vm-hosted-home = vm-tests.hosted-home;
   }
 )
