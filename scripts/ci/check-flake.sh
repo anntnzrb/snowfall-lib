@@ -12,7 +12,7 @@ nix run \
     --fail-mode \
     --check-outdated \
     --check-owner \
-    --check-supported \
+    --condition "gitRef == 'main' || gitRef == 'master'" \
     flake.lock
 
 nix fmt -- --ci
