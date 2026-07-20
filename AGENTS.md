@@ -65,6 +65,8 @@ Core entry points: `flake.nix`, `snowfall-lib/default.nix`,
 - Darwin runtime claims MUST have macOS evidence.
 - Linux evaluation and NixOS VMs NEVER prove Darwin runtime behavior.
 - Fixtures MUST remain deterministic and minimal.
+- `nix flake check` MUST own all pure gates, including formatting/pre-commit
+  enforcement and the flake-updater behavior harness.
 - Nix line-coverage percentages MUST NEVER be reported without reproducible
   instrumentation. Enforced measures: exported-API coverage and behavioral
   depth.
@@ -87,14 +89,11 @@ nix develop
 nix fmt
 nix fmt -- --ci
 nix flake check path:. --print-build-logs
-bash ./tests/ci/update-flake-inputs.sh
+./tests/ci/update-flake-inputs.sh
 ./scripts/ci/check-flake.sh
 ```
 
-`./scripts/ci/check-flake.sh` is canonical. It tests the updater, validates
-`flake.lock`, checks formatting, performs Linux `--all-systems` evaluation, and
-runs the platform-native flake check. It prevents lock writes and may require
-network-accessible flake inputs.
+`nix flake check` owns the pure test, formatting, and updater-harness gates.
 
 ## Completion
 
