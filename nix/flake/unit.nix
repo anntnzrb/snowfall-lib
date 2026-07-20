@@ -5,9 +5,11 @@
 }:
 let
   pkgs = inputs.nixpkgs.legacyPackages.${system};
+  nix-unit = inputs.nix-unit.packages.${system}.default.overrideAttrs (old: {
+    nativeBuildInputs = pkgs.lib.flatten (old.nativeBuildInputs or [ ]);
+  });
 in
-pkgs.runCommand "snowfall-lib-unit-tests"
-  { nativeBuildInputs = [ inputs.nix-unit.packages.${system}.default ]; }
+pkgs.runCommand "snowfall-lib-unit-tests" { nativeBuildInputs = [ nix-unit ]; }
   ''
     export HOME="$TMPDIR"
     nix-unit \
