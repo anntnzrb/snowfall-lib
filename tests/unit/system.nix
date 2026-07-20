@@ -82,11 +82,26 @@ in
         }
       ];
     };
+
+    testMissingTargetIsEmpty = {
+      expr = system.get-target-systems-metadata "${fixtures.builders}/systems/aarch64-linux";
+      expected = [ ];
+    };
   };
 
   get-system-builder = {
-    testReturnsABuilder = {
+    testSelectsLinuxBuilder = {
       expr = builtins.isFunction (system.get-system-builder "x86_64-linux");
+      expected = true;
+    };
+
+    testSelectsDarwinBuilder = {
+      expr = builtins.isFunction (system.get-system-builder "aarch64-darwin");
+      expected = true;
+    };
+
+    testVirtualTargetTakesPrecedence = {
+      expr = builtins.isFunction (system.get-system-builder "x86_64-iso");
       expected = true;
     };
   };
@@ -159,12 +174,48 @@ in
         };
       };
     };
+
+    testResolvesVirtualTargetAndOverridesDefaults = {
+      expr =
+        let
+          result = system.create-system {
+            target = "aarch64-iso";
+            path = "${fixtures.builders}/systems/x86_64-linux/alpha/default.nix";
+            name = "installer";
+            inherit builder;
+            homeManager = false;
+            channelName = "unstable";
+          };
+        in
+        {
+          inherit (result) channelName output system;
+          inherit (result.specialArgs) host target virtual;
+        };
+      expected = {
+        channelName = "unstable";
+        output = "isoConfigurations";
+        system = "aarch64-linux";
+        host = "installer";
+        target = "aarch64-iso";
+        virtual = true;
+      };
+    };
   };
 
   create-systems = {
-    testReturnsAnAttributeSet = {
-      expr = builtins.isAttrs (system.create-systems { });
-      expected = true;
+    testEmptySourceCreatesNoSystems = {
+      expr = system.create-systems { };
+      expected = { };
+    };
+
+    testUndiscoveredHostOverrideCreatesNothing = {
+      expr = system.create-systems {
+        systems.hosts.ghost = {
+          homeManager = false;
+          specialArgs.marker = true;
+        };
+      };
+      expected = { };
     };
   };
 }

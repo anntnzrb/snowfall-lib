@@ -14,12 +14,22 @@ in
       expr = lib.snowfall.internal.system-lib ? snowfall;
       expected = true;
     };
+
+    test-includes-nixpkgs-library = {
+      expr = lib.snowfall.internal.system-lib ? mkOption;
+      expected = true;
+    };
   };
 
   user-lib = {
     test-is-an-attribute-set = {
       expr = builtins.isAttrs lib.snowfall.internal.user-lib;
       expected = true;
+    };
+
+    test-empty-when-no-user-library-is-discovered = {
+      expr = builtins.attrNames lib.snowfall.internal.user-lib;
+      expected = [ ];
     };
   };
 

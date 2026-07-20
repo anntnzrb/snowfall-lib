@@ -18,6 +18,17 @@ in
         value = 1;
       };
     };
+
+    testLeavesInputWithoutSelfUnchanged = {
+      expr = flake.without-self {
+        src = "keep";
+        value = 1;
+      };
+      expected = {
+        src = "keep";
+        value = 1;
+      };
+    };
   };
 
   without-src = {
@@ -25,6 +36,17 @@ in
       expr = flake.without-src {
         self = "keep";
         src = "drop";
+        value = 1;
+      };
+      expected = {
+        self = "keep";
+        value = 1;
+      };
+    };
+
+    testLeavesInputWithoutSrcUnchanged = {
+      expr = flake.without-src {
+        self = "keep";
         value = 1;
       };
       expected = {
@@ -43,6 +65,11 @@ in
       };
       expected.value = 1;
     };
+
+    testAcceptsEmptyInput = {
+      expr = flake.without-snowfall-inputs { };
+      expected = { };
+    };
   };
 
   without-snowfall-options = {
@@ -57,6 +84,17 @@ in
       expected = {
         channels.nixpkgs = { };
         description = "keep";
+      };
+    };
+
+    testLeavesOrdinaryFlakeOptions = {
+      expr = flake.without-snowfall-options {
+        description = "keep";
+        inputs.nixpkgs.url = "github:nixos/nixpkgs";
+      };
+      expected = {
+        description = "keep";
+        inputs.nixpkgs.url = "github:nixos/nixpkgs";
       };
     };
   };
@@ -178,6 +216,11 @@ in
         scalar.lib = 1;
       };
       expected.usable.marker = true;
+    };
+
+    testAcceptsNoInputs = {
+      expr = flake.get-libs { };
+      expected = { };
     };
   };
 }

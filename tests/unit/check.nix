@@ -30,5 +30,13 @@ in
         "lint-check"
       ];
     };
+
+    test-empty-input = {
+      expr = lib.snowfall.check.create-checks {
+        src = fixtures.outputs + /empty;
+        inherit channels pkgs;
+      };
+      expected = { };
+    };
   };
 }

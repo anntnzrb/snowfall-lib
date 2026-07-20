@@ -30,5 +30,13 @@ in
         default = "dev-shell";
       };
     };
+
+    test-empty-input = {
+      expr = lib.snowfall.shell.create-shells {
+        src = fixtures.outputs + /empty;
+        inherit channels pkgs;
+      };
+      expected = { };
+    };
   };
 }
