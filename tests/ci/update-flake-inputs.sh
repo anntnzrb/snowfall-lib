@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-repo_root=$(git rev-parse --show-toplevel)
+repo_root=${SNOWFALL_REPO_ROOT:-$(git rev-parse --show-toplevel)}
 readonly repo_root
 readonly updater="${repo_root}/scripts/ci/update-flake-inputs.sh"
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/snowfall-updater-test.XXXXXXXX")

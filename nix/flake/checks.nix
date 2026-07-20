@@ -181,7 +181,25 @@ assert eval.success;
 }
 //
   inputs.nixpkgs.lib.optionalAttrs (builtins.elem system strictToolchainSystems)
-    { inherit pre-commit; }
+    {
+      inherit pre-commit;
+
+      flake-updater =
+        pkgs.runCommand "flake-updater-tests"
+          {
+            nativeBuildInputs = [
+              pkgs.bash
+              pkgs.git
+              pkgs.jq
+            ];
+          }
+          ''
+            export HOME="$TMPDIR"
+            export SNOWFALL_REPO_ROOT=${self}
+            bash ${self}/tests/ci/update-flake-inputs.sh
+            touch "$out"
+          '';
+    }
 // inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
   let
     nixos-smoke-lib = mkLib {
