@@ -3,6 +3,18 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nix-unit = {
+      url = "github:nix-community/nix-unit/v2.34.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    darwin = {
+      url = "github:nix-darwin/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-utils-plus.url = "github:gytis-ivaskevicius/flake-utils-plus/master";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix/main";
@@ -13,7 +25,13 @@
   outputs =
     { self, ... }@inputs:
     let
-      core-inputs = inputs // {
+      test-input-names = [
+        "darwin"
+        "home-manager"
+        "nix-unit"
+      ];
+      library-inputs = builtins.removeAttrs inputs test-input-names;
+      core-inputs = library-inputs // {
         src = self;
       };
       systems = inputs.nixpkgs.lib.systems.flakeExposed;
@@ -52,9 +70,19 @@
           mkLib
           ;
       };
+      test-lib = mkLib {
+        src = self;
+        inputs = library-inputs // {
+          self = { };
+        };
+      };
+      tests = import ./tests/unit {
+        lib = test-lib;
+        nixUnitLib = inputs.nix-unit.lib;
+      };
     in
     {
-      inherit mkLib mkFlake;
+      inherit mkLib mkFlake tests;
 
       nixosModules = {
         user = ./modules/nixos/user/default.nix;
@@ -88,7 +116,7 @@
             lib = mkLib {
               src = self;
 
-              inputs = inputs // {
+              inputs = library-inputs // {
                 self = { };
               };
             };

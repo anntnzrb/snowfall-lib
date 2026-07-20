@@ -157,6 +157,7 @@ assert eval.value.private-system-rejects-collision;
 assert eval.value.strips-bare-home-package-alias;
 {
   snowfall-lib-eval = pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
+  unit = import ./unit.nix { inherit inputs self system; };
 }
 //
   inputs.nixpkgs.lib.optionalAttrs (builtins.elem system strictToolchainSystems)
