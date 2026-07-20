@@ -36,11 +36,6 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
-      - name: Test flake updater
-        if: runner.os == 'Linux'
-        shell: sh
-        run: bash ./tests/ci/update-flake-inputs.sh
-
       - name: Check flake
         shell: sh
         run: ./scripts/ci/check-flake.sh

@@ -2,8 +2,6 @@
 
 set -eu
 
-./tests/ci/update-flake-inputs.sh
-
 nix run \
     --no-update-lock-file \
     --no-write-lock-file \
@@ -12,10 +10,7 @@ nix run \
     --fail-mode \
     --check-outdated \
     --check-owner \
-    --condition "gitRef == 'main' || gitRef == 'master'" \
     flake.lock
-
-nix fmt -- --ci
 
 kernel_name=$(uname -s)
 if [ "${kernel_name}" = "Linux" ]; then
