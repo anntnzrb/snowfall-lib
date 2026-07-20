@@ -145,6 +145,18 @@ let
     }
   ) (inputs.nixpkgs.lib.filterAttrs (_: builtins.isBool) eval.value);
   regression-failures = inputs.nixpkgs.lib.runTests regression-tests;
+  integration = import ../../tests/integration {
+    snowfall = self;
+    inherit inputs;
+  };
+  integration-tests = inputs.nixpkgs.lib.mapAttrs' (
+    name: value:
+    inputs.nixpkgs.lib.nameValuePair "test-${name}" {
+      expr = value;
+      expected = true;
+    }
+  ) integration.assertions;
+  integration-failures = inputs.nixpkgs.lib.runTests integration-tests;
   # nixfmt's GHC toolchain cannot bootstrap on the remaining exposed systems.
   strictToolchainSystems = [
     "aarch64-darwin"
@@ -160,6 +172,11 @@ assert eval.success;
       "Snowfall evaluation regressions:\n" + builtins.toJSON regression-failures
     );
     pkgs.runCommand "snowfall-lib-eval" { } "mkdir -p $out";
+  snowfall-lib-integration =
+    assert inputs.nixpkgs.lib.assertMsg (integration-failures == [ ]) (
+      "Snowfall integration failures:\n" + builtins.toJSON integration-failures
+    );
+    pkgs.runCommand "snowfall-lib-integration" { } "mkdir -p $out";
   unit = import ./unit.nix { inherit inputs self system; };
 }
 //
