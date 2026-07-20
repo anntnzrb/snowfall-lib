@@ -2,7 +2,7 @@
   inputs,
   self,
   mkLib,
-  formatting,
+  pre-commit,
   system,
 }:
 let
@@ -181,7 +181,7 @@ assert eval.success;
 }
 //
   inputs.nixpkgs.lib.optionalAttrs (builtins.elem system strictToolchainSystems)
-    { formatting = formatting.check (inputs.nixpkgs.lib.cleanSource ../..); }
+    { inherit pre-commit; }
 // inputs.nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
   let
     nixos-smoke-lib = mkLib {

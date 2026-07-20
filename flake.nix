@@ -2,22 +2,27 @@
   description = "Snowfall Lib";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    flake-utils-plus.url = "github:gytis-ivaskevicius/flake-utils-plus/master";
     nix-unit = {
-      url = "github:nix-community/nix-unit/v2.34.2";
+      url = "github:nix-community/nix-unit/main";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.treefmt-nix.follows = "treefmt-nix";
     };
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     darwin = {
-      url = "github:nix-darwin/nix-darwin";
+      url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-utils-plus.url = "github:gytis-ivaskevicius/flake-utils-plus/master";
     treefmt-nix = {
       url = "github:numtide/treefmt-nix/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pre-commit-hooks = {
+      url = "github:cachix/git-hooks.nix/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -29,6 +34,7 @@
         "darwin"
         "home-manager"
         "nix-unit"
+        "pre-commit-hooks"
       ];
       library-inputs = builtins.removeAttrs inputs test-input-names;
       core-inputs = library-inputs // {
